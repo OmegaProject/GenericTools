@@ -2,7 +2,9 @@ package gui;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 
 import javax.swing.JFileChooser;
@@ -35,58 +37,93 @@ public class OmegaGenericToolGUIListeners {
 				final File directory = mainGUI.getWorkingDirectory();
 
 				for (final File parentDirectory : directory.listFiles()) {
-					System.out.println(parentDirectory.getName());
 					if (!parentDirectory.isDirectory()
-					        || parentDirectory.getName().toLowerCase().contains(".bin")) {
+					        || parentDirectory.getName().toLowerCase()
+					                .contains(".bin")) {
 						continue;
 					}
 
-					for (final File imageDirectory : parentDirectory.listFiles()) {
-						System.out.println(imageDirectory.getName());
+					mainGUI.appendResultsText("Folder\t"
+					        + parentDirectory.getName());
+
+					File snrResults = null;
+					for (final File imageDirectory : parentDirectory
+					        .listFiles()) {
 						if (!imageDirectory.isDirectory()) {
 							continue;
 						}
-
-						File snrResults = null;
+						mainGUI.appendResultsText("Dataset\t"
+						        + imageDirectory.getName());
 						File framesFile = null;
 						File trajsFile = null;
-						for (final File file3 : imageDirectory.listFiles()) {
-							final String framesFileName = file3.getName();
-							if (!framesFileName.contains(OmegaGenericToolGUI.fileName1)) {
+						for (final File file : imageDirectory.listFiles()) {
+							final String framesFileName = file.getName();
+							if (imageDirectory
+							        .getName()
+							        .equals("appl.omega.ParticleTrackerPTCoproc_8_V3_PUSH_wx")) {
+								System.out.println("File: " + framesFileName);
+							}
+							if (!framesFileName
+							        .contains(OmegaGenericToolGUI.fileName1)) {
 								continue;
 							}
-							System.out.println(framesFileName);
+							System.out.println("File: " + framesFileName);
 							String trajsFileName = framesFileName.replace(
 							        OmegaGenericToolGUI.fileName1, "");
-							final int index = trajsFileName.indexOf("_");
+							final int index = trajsFileName.lastIndexOf("_");
 							final String snr = trajsFileName
 							        .substring(index + 1);
-							trajsFileName = OmegaGenericToolGUI.fileName2 + trajsFileName;
-							framesFile = file3;
-							trajsFile = new File(imageDirectory + "\\" + trajsFileName);
+							trajsFileName = OmegaGenericToolGUI.fileName2
+							        + trajsFileName;
+							framesFile = file;
+							trajsFile = new File(imageDirectory + "\\"
+							        + trajsFileName);
 
 							snrResults = new File(parentDirectory.getPath()
 							        + "\\toolsResults_" + snr + ".txt");
+
+							try {
+								final FileWriter fw = new FileWriter(
+								        snrResults, true);
+								final BufferedWriter bw = new BufferedWriter(fw);
+								bw.write("Dataset\t" + imageDirectory.getName()
+								        + "\n");
+								bw.close();
+								fw.close();
+							} catch (final IOException ex) {
+								// TODO Auto-generated catch block
+								ex.printStackTrace();
+							}
 
 							if ((trajsFile != null) && (framesFile != null)
 							        && (snrResults != null)) {
 								final PTFilesAnalyzer mSNRfinder = new PTFilesAnalyzer(
 								        imageDirectory);
-								mSNRfinder.setGenerateTrajectories(false);
 								try {
-									mSNRfinder.analyzeFramesFile(framesFile);
-									mSNRfinder
-									        .analyzeTrajectoriesFile(trajsFile);
-
+									mSNRfinder.computeSNRData(framesFile,
+									        trajsFile, snrResults);
 									mainGUI.appendSNRResult(mSNRfinder);
-									mSNRfinder.appendResultsToFile(snrResults);
-								} catch (final IOException e) {
+								} catch (final IOException ex) {
 									// TODO Auto-generated catch block
-									e.printStackTrace();
+									ex.printStackTrace();
 								}
 							} else {
 								mainGUI.appendResultsText("Files PTFrames_* and/or PTTrajectories_* not found in folder "
 								        + imageDirectory.getPath());
+								mainGUI.appendResultsText("####################################################");
+								try {
+									final FileWriter fw = new FileWriter(
+									        snrResults, true);
+									final BufferedWriter bw = new BufferedWriter(
+									        fw);
+									bw.write("Files PTFrames_* and/or PTTrajectories_* not found in this folder");
+									bw.write("####################################################\n");
+									bw.close();
+									fw.close();
+								} catch (final IOException ex) {
+									// TODO Auto-generated catch block
+									ex.printStackTrace();
+								}
 							}
 							trajsFile = null;
 							framesFile = null;
@@ -105,44 +142,44 @@ public class OmegaGenericToolGUIListeners {
 			        public void actionPerformed(final ActionEvent evt) {
 				        final File directory = mainGUI.getWorkingDirectory();
 
-				        for (final File file1 : directory.listFiles()) {
-					        System.out.println(file1.getName());
-					        if (!file1.isDirectory()
-					                || file1.getName().toLowerCase()
+				        for (final File parentDirectory : directory.listFiles()) {
+					        if (!parentDirectory.isDirectory()
+					                || parentDirectory.getName().toLowerCase()
 					                        .contains(".bin")) {
 						        continue;
 					        }
 
-					        for (final File file2 : file1.listFiles()) {
-						        System.out.println(file2.getName());
-						        if (!file2.isDirectory()) {
+					        mainGUI.appendResultsText("Folder\t"
+					                + parentDirectory.getName());
+					        for (final File imageDirectory : parentDirectory
+					                .listFiles()) {
+						        if (!imageDirectory.isDirectory()) {
 							        continue;
 						        }
-
+						        mainGUI.appendResultsText("Dataset\t"
+						                + imageDirectory.getName());
 						        File trajsFile = null;
-						        for (final File file3 : file2.listFiles()) {
-							        System.out.println(file3.getName());
-							        if (file3.getName().contains(
+						        for (final File file : imageDirectory
+						                .listFiles()) {
+							        if (file.getName().contains(
 							                OmegaGenericToolGUI.fileName2)) {
-								        trajsFile = file3;
-								        System.out.println("Set trajsFile");
+								        trajsFile = file;
 							        }
 						        }
 
 						        if ((trajsFile != null)) {
 							        final PTFilesAnalyzer mSNRfinder = new PTFilesAnalyzer(
-							                file2);
-							        mSNRfinder.setGenerateTrajectories(true);
+							                imageDirectory);
 							        try {
 								        mSNRfinder
-								                .analyzeTrajectoriesFile(trajsFile);
-							        } catch (final IOException e) {
+								                .generateSingleTrajectories(trajsFile);
+							        } catch (final IOException ex) {
 								        // TODO Auto-generated catch block
-								        e.printStackTrace();
+								        ex.printStackTrace();
 							        }
 						        } else {
 							        mainGUI.appendResultsText("Files PTTrajectories_* not found in folder "
-							                + file2.getPath());
+							                + imageDirectory.getPath());
 						        }
 					        }
 				        }

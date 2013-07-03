@@ -47,7 +47,21 @@ public class PTFilesAnalyzer {
 		this.numberOfFrames = 0;
 	}
 
-	public void analyzeFramesFile(final File framesFile) throws IOException {
+	public void computeSNRData(final File framesFile, final File trajsFile,
+	        final File resultsFile) throws IOException {
+		this.setGenerateTrajectories(false);
+		this.analyzeFramesFile(framesFile);
+		this.analyzeTrajectoriesFile(trajsFile);
+		this.appendResultsToFile(resultsFile);
+	}
+
+	public void generateSingleTrajectories(final File trajsFile)
+	        throws IOException {
+		this.setGenerateTrajectories(true);
+		this.analyzeTrajectoriesFile(trajsFile);
+	}
+
+	private void analyzeFramesFile(final File framesFile) throws IOException {
 		this.framesFile = framesFile;
 		String line;
 		final FileReader fr = new FileReader(this.framesFile);
@@ -127,7 +141,7 @@ public class PTFilesAnalyzer {
 		fr.close();
 	}
 
-	public void analyzeTrajectoriesFile(final File trajsFile)
+	private void analyzeTrajectoriesFile(final File trajsFile)
 	        throws IOException {
 		this.trajsFile = trajsFile;
 		String line;
@@ -140,7 +154,7 @@ public class PTFilesAnalyzer {
 		int trajNumber = -1;
 		line = br.readLine();
 		while (line != null) {
-			if (line.startsWith("Stat VP:")) {
+			if (!this.generateTrajectories && line.startsWith("Stat VP:")) {
 				this.totalParticles++;
 				final int beginSubIndex = line.indexOf("SP:");
 				final int endSubIndex = line.indexOf("S:");
@@ -217,9 +231,6 @@ public class PTFilesAnalyzer {
 
 		br.close();
 		fr.close();
-
-		this.appendResultsToFile(new File(this.workingDir
-		        + "\\toolsResults.txt"));
 	}
 
 	public void printResults() {
@@ -242,8 +253,8 @@ public class PTFilesAnalyzer {
 	public void appendResultsToFile(final File file) throws IOException {
 		final FileWriter fw = new FileWriter(file, true);
 		final BufferedWriter bw = new BufferedWriter(fw);
-		bw.write("Frames\t" + this.framesFile + "\n");
-		bw.write("Trajs\t" + this.trajsFile + "\n");
+		bw.write("Frames\t" + this.framesFile.getName() + "\n");
+		bw.write("Trajs\t" + this.trajsFile.getName() + "\n");
 		bw.write("SNR_C\t" + this.getMeanSNR_C() + "\n");
 		bw.write("SNR_C_M\t" + this.getMeanSNR_C_M() + "\n");
 		bw.write("SNR_B_P\t" + this.getMeanSNR_B_P() + "\n");
