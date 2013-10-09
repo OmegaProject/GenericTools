@@ -8,11 +8,19 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.Format;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class PTFilesAnalyzer {
+
+	public final static String fileName1 = "PT_Frames_";
+	public final static String fileName2 = "PT_Trajectories_";
+
 	private final File workingDir;
 	private File framesFile;
 	private File trajsFile;
+	private File snrDataFile;
 	private Double totalSNR_C;
 	private Double totalSNR_C_M;
 	private Double totalSNR_B_P;
@@ -33,6 +41,8 @@ public class PTFilesAnalyzer {
 
 	private boolean generateTrajectories;
 
+	public List<String> errors;
+
 	public PTFilesAnalyzer(final File workingDir) {
 		this.workingDir = workingDir;
 		this.totalSNR_C = 0.0;
@@ -45,14 +55,33 @@ public class PTFilesAnalyzer {
 		this.totalParticles = 0;
 		this.meanParticleSize = 0.0;
 		this.numberOfFrames = 0;
+		this.errors = new ArrayList<String>();
 	}
 
-	public void computeSNRData(final File framesFile, final File trajsFile,
-	        final File resultsFile) throws IOException {
+	public void computeSNRDataAndAppendToFile(final File framesFile,
+	        final File trajsFile, final File resultsFile) throws IOException {
 		this.setGenerateTrajectories(false);
 		this.analyzeFramesFile(framesFile);
 		this.analyzeTrajectoriesFile(trajsFile);
 		this.appendResultsToFile(resultsFile);
+	}
+
+	public void computeSNRDataAndAppendToList(final File framesFile,
+	        final File trajsFile, final Map<Double, List<StringBuffer[]>> map)
+	        throws IOException {
+		this.setGenerateTrajectories(false);
+		this.analyzeFramesFile(framesFile);
+		this.analyzeTrajectoriesFile(trajsFile);
+		final int lastIndex = framesFile.getName().lastIndexOf("_");
+		String subString = framesFile.getName().substring(lastIndex + 1);
+		subString = subString.replace(".txt", "");
+		final Double index = Double.valueOf(subString);
+		List<StringBuffer[]> list = map.get(index);
+		if (list == null) {
+			list = new ArrayList<StringBuffer[]>();
+			map.put(index, list);
+		}
+		this.appendResultsToList(list);
 	}
 
 	public void generateSingleTrajectories(final File trajsFile)
@@ -184,6 +213,12 @@ public class PTFilesAnalyzer {
 					f = new File(this.workingDir + "\\SPT_onlyone_"
 					        + trajNumber + ".xy");
 				}
+
+				if (trajNumber > 10) {
+					this.errors.add(this.workingDir
+					        + " has a trajectory with index > 10");
+				}
+
 				fw = new FileWriter(f);
 				bw = new BufferedWriter(fw);
 			} else if (this.generateTrajectories && line.startsWith("\t")) {
@@ -226,8 +261,12 @@ public class PTFilesAnalyzer {
 			fw.close();
 		}
 
-		this.meanParticlePerFrame = this.totalParticles / this.numberOfFrames;
-		this.meanParticleSize = this.totalParticleSize / this.totalParticles;
+		if (!this.generateTrajectories) {
+			this.meanParticlePerFrame = this.totalParticles
+			        / this.numberOfFrames;
+			this.meanParticleSize = this.totalParticleSize
+			        / this.totalParticles;
+		}
 
 		br.close();
 		fr.close();
@@ -270,21 +309,39 @@ public class PTFilesAnalyzer {
 		fw.close();
 	}
 
-	public static void main(final String[] args) throws IOException {
-		final File workingDir = new File(
-		        "C:\\Workspaces\\SYD\\SYD(x64)_20120717\\appl.omega.ParticleTrackerPTCoproc_8_V3_PUSH_wx\\");
-		final String fileName1 = "PT_Frames_";
-		final String fileName2 = "PT_Trajectories_";
-		final String dateName = "20130606_170325";
-		final String extName = ".txt";
-		final File framesFile = new File(fileName1 + dateName + extName);
-		final File trajsFile = new File(fileName2 + dateName + extName);
-		final PTFilesAnalyzer finder = new PTFilesAnalyzer(workingDir);
-
-		finder.analyzeFramesFile(framesFile);
-		finder.analyzeTrajectoriesFile(trajsFile);
-
-		finder.printResults();
+	public void appendResultsToList(final List<StringBuffer[]> list)
+	        throws IOException {
+		final StringBuffer[] sb = new StringBuffer[11];
+		final StringBuffer sb0 = new StringBuffer(this.framesFile.getName()
+		        + "\t");
+		sb[0] = sb0;
+		final StringBuffer sb1 = new StringBuffer(this.trajsFile.getName()
+		        + "\t");
+		sb[1] = sb1;
+		final StringBuffer sb2 = new StringBuffer(this.getMeanSNR_C() + "\t");
+		sb[2] = sb2;
+		final StringBuffer sb3 = new StringBuffer(this.getMeanSNR_C_M() + "\t");
+		sb[3] = sb3;
+		final StringBuffer sb4 = new StringBuffer(this.getMeanSNR_B_P() + "\t");
+		sb[4] = sb4;
+		final StringBuffer sb5 = new StringBuffer(this.getMeanSNR_B_P_M()
+		        + "\t");
+		sb[5] = sb5;
+		final StringBuffer sb6 = new StringBuffer(this.getMeanSNR_B_G() + "\t");
+		sb[6] = sb6;
+		final StringBuffer sb7 = new StringBuffer(this.getMeanSNR_B_G_M()
+		        + "\t");
+		sb[7] = sb7;
+		final StringBuffer sb8 = new StringBuffer(this.getTotalParticles()
+		        + "\t");
+		sb[8] = sb8;
+		final StringBuffer sb9 = new StringBuffer(
+		        this.getMeanParticlePerFrame() + "\t");
+		sb[9] = sb9;
+		final StringBuffer sb10 = new StringBuffer(this.getMeanParticleSize()
+		        + "\t");
+		sb[10] = sb10;
+		list.add(sb);
 	}
 
 	public Double getMeanSNR_C() {

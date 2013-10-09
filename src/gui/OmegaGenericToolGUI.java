@@ -5,6 +5,7 @@ import java.awt.GridLayout;
 import java.io.File;
 
 import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -23,19 +24,26 @@ public class OmegaGenericToolGUI {
 		mainGUI.createAndShowGUI();
 	}
 
-	final static String fileName1 = "PT_Frames_";
-	final static String fileName2 = "PT_Trajectories_";
-
 	private JFrame mainFrame;
 
-	private JButton dirChooserButt;
-	private JFileChooser dirChooserDialog;
-	private JLabel currentDirLbl;
+	private JButton workingDirChooser_btt;
+	private JFileChooser workingDirDialog_fCh;
+	private JLabel workingCurrentDirLbl;
 
 	private JTextArea results_txtA;
 
 	private JButton generateTrajFiles_btt;
 	private JButton computeSNRData_btt;
+	private JButton computeSNRMeanData_btt;
+	private JButton computeP2PDist_btt;
+
+	private JButton compareDirChooser_btt;
+	private JButton compare_btt;
+	private JButton compareWithDistr_btt;
+	private JFileChooser compareDirDialog_fCh;
+	private JLabel compareCurrentDirLbl;
+
+	private JButton aggregateTrajData_btt;
 
 	/**
 	 * Create the main frame and invoke all the needed methods
@@ -46,13 +54,20 @@ public class OmegaGenericToolGUI {
 		// Create and set up the window.
 		this.mainFrame = new JFrame("Image tools");
 		this.mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-		this.dirChooserDialog = new JFileChooser();
 		final String s = System.getProperty("user.dir");
-		this.dirChooserDialog.setCurrentDirectory(new File(s));
-		this.dirChooserDialog.setDialogTitle("Working directory chooser");
-		this.dirChooserDialog.setMultiSelectionEnabled(false);
-		this.dirChooserDialog
+
+		this.workingDirDialog_fCh = new JFileChooser();
+		this.workingDirDialog_fCh.setCurrentDirectory(new File(s));
+		this.workingDirDialog_fCh.setDialogTitle("Working directory chooser");
+		this.workingDirDialog_fCh.setMultiSelectionEnabled(false);
+		this.workingDirDialog_fCh
+		        .setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+
+		this.compareDirDialog_fCh = new JFileChooser();
+		this.compareDirDialog_fCh.setCurrentDirectory(new File(s));
+		this.compareDirDialog_fCh.setDialogTitle("Compare directory chooser");
+		this.compareDirDialog_fCh.setMultiSelectionEnabled(false);
+		this.compareDirDialog_fCh
 		        .setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 
 		this.addWidgets();
@@ -72,14 +87,22 @@ public class OmegaGenericToolGUI {
 	 * @since 0.0
 	 */
 	private void addWidgets() {
-		this.mainFrame.getContentPane().setLayout(new BorderLayout());
+		this.mainFrame.getContentPane()
+		        .setLayout(
+		                new BoxLayout(this.mainFrame.getContentPane(),
+		                        BoxLayout.Y_AXIS));
 
-		this.mainFrame.getContentPane().add(
-		        this.generateImageMainInformationsPanel(), BorderLayout.NORTH);
+		this.mainFrame.getContentPane().add(this.createMainPanel());
 		this.addHorizontalSeparator();
 
-		this.mainFrame.getContentPane().add(this.generateResultsPanel(),
-		        BorderLayout.CENTER);
+		this.mainFrame.getContentPane().add(this.createComparePanel());
+		this.addHorizontalSeparator();
+
+		this.mainFrame.getContentPane()
+		        .add(this.createAggregateTrajDataPanel());
+		this.addHorizontalSeparator();
+
+		this.mainFrame.getContentPane().add(this.generateResultsPanel());
 	}
 
 	/**
@@ -100,30 +123,78 @@ public class OmegaGenericToolGUI {
 	 * 
 	 * @since 0.0
 	 */
-	private JPanel generateImageMainInformationsPanel() {
+	private JPanel createMainPanel() {
 		final JPanel panel = new JPanel();
 		panel.setLayout(new BorderLayout());
 
 		final JPanel topSubPanel = new JPanel();
 		topSubPanel.setLayout(new GridLayout(3, 1));
 
-		topSubPanel.add(new JLabel("Actual folder:"));
-		final String s = this.dirChooserDialog.getCurrentDirectory().getPath();
-		this.currentDirLbl = new JLabel(s);
-		topSubPanel.add(this.currentDirLbl);
-		this.dirChooserButt = new JButton("Choose the working directory");
-		topSubPanel.add(this.dirChooserButt);
+		topSubPanel.add(new JLabel("Actual working folder:"));
+		final String workingFolder = this.workingDirDialog_fCh
+		        .getCurrentDirectory().getPath();
+		this.workingCurrentDirLbl = new JLabel(workingFolder);
+		topSubPanel.add(this.workingCurrentDirLbl);
+		this.workingDirChooser_btt = new JButton("Choose the working directory");
+		topSubPanel.add(this.workingDirChooser_btt);
 
 		panel.add(topSubPanel, BorderLayout.NORTH);
 
 		final JPanel subPanel = new JPanel();
-		subPanel.setLayout(new GridLayout(2, 1));
+		subPanel.setLayout(new GridLayout(4, 1));
 
 		this.generateTrajFiles_btt = new JButton("Generate trajectories files");
 		subPanel.add(this.generateTrajFiles_btt);
 
 		this.computeSNRData_btt = new JButton("Compute SNR data");
 		subPanel.add(this.computeSNRData_btt);
+
+		this.computeSNRMeanData_btt = new JButton("Compute SNR mean data");
+		subPanel.add(this.computeSNRMeanData_btt);
+
+		this.computeP2PDist_btt = new JButton("Compute P2P distance");
+		subPanel.add(this.computeP2PDist_btt);
+
+		panel.add(subPanel, BorderLayout.CENTER);
+
+		return panel;
+	}
+
+	private JPanel createComparePanel() {
+		final JPanel panel = new JPanel();
+		panel.setLayout(new BorderLayout());
+
+		final JPanel subPanel = new JPanel();
+		subPanel.setLayout(new GridLayout(5, 1));
+
+		subPanel.add(new JLabel("Actual compare folder:"));
+		final String compareFolder = this.compareDirDialog_fCh
+		        .getCurrentDirectory().getPath();
+		this.compareCurrentDirLbl = new JLabel(compareFolder);
+		subPanel.add(this.compareCurrentDirLbl);
+		this.compareDirChooser_btt = new JButton("Choose the compare directory");
+		subPanel.add(this.compareDirChooser_btt);
+
+		this.compare_btt = new JButton("Compare images");
+		subPanel.add(this.compare_btt);
+
+		this.compareWithDistr_btt = new JButton("Compare images with distr");
+		subPanel.add(this.compareWithDistr_btt);
+
+		panel.add(subPanel, BorderLayout.CENTER);
+
+		return panel;
+	}
+
+	private JPanel createAggregateTrajDataPanel() {
+		final JPanel panel = new JPanel();
+		panel.setLayout(new BorderLayout());
+
+		final JPanel subPanel = new JPanel();
+		subPanel.setLayout(new GridLayout(1, 1));
+
+		this.aggregateTrajData_btt = new JButton("Aggregate traj data");
+		subPanel.add(this.aggregateTrajData_btt);
 
 		panel.add(subPanel, BorderLayout.CENTER);
 
@@ -169,7 +240,16 @@ public class OmegaGenericToolGUI {
 	private void addListeners() {
 		OmegaGenericToolGUIListeners.addWorkingDirChooser(this);
 		OmegaGenericToolGUIListeners.addGenerateTrajFiles(this);
-		OmegaGenericToolGUIListeners.addComputeSNRData(this);
+		// OmegaGenericToolGUIListeners.addComputeSNRData(this);
+		OmegaGenericToolGUIListeners.addComputeMeanSNRData(this);
+
+		OmegaGenericToolGUIListeners.addComputeP2PDistance(this);
+
+		OmegaGenericToolGUIListeners.addCompareDirChooser(this);
+		OmegaGenericToolGUIListeners.addCompareImages(this);
+		OmegaGenericToolGUIListeners.addCompareImagesWithDistr(this);
+
+		OmegaGenericToolGUIListeners.addAggregateTrajData(this);
 	}
 
 	private void setDefaultValues() {
@@ -182,6 +262,26 @@ public class OmegaGenericToolGUI {
 
 	public JButton getComputeSNRDataButt() {
 		return this.computeSNRData_btt;
+	}
+
+	public JButton getComputeMeanSNRDataButt() {
+		return this.computeSNRMeanData_btt;
+	}
+
+	public JButton getComputeP2PDistanceButt() {
+		return this.computeP2PDist_btt;
+	}
+
+	public JButton getCompareButt() {
+		return this.compare_btt;
+	}
+
+	public JButton getCompareWithDistriButt() {
+		return this.compareWithDistr_btt;
+	}
+
+	public JButton getAggregateTrajDataButt() {
+		return this.aggregateTrajData_btt;
 	}
 
 	/**
@@ -200,22 +300,41 @@ public class OmegaGenericToolGUI {
 	}
 
 	public File getWorkingDirectory() {
-		if (this.dirChooserDialog.getSelectedFile() != null)
-			return this.dirChooserDialog.getSelectedFile();
+		if (this.workingDirDialog_fCh.getSelectedFile() != null)
+			return this.workingDirDialog_fCh.getSelectedFile();
 		else
-			return this.dirChooserDialog.getCurrentDirectory();
+			return this.workingDirDialog_fCh.getCurrentDirectory();
 	}
 
-	public JButton getDirChooserButton() {
-		return this.dirChooserButt;
+	public File getCompareDirectory() {
+		if (this.compareDirDialog_fCh.getSelectedFile() != null)
+			return this.compareDirDialog_fCh.getSelectedFile();
+		else
+			return this.compareDirDialog_fCh.getCurrentDirectory();
 	}
 
-	public JFileChooser getDirChooserDialog() {
-		return this.dirChooserDialog;
+	public JButton getWorkingDirChooserButton() {
+		return this.workingDirChooser_btt;
 	}
 
-	public void setNewCurrentDirLbl(final String s) {
-		this.currentDirLbl.setText(s);
+	public JButton getCompareDirChooserButton() {
+		return this.compareDirChooser_btt;
+	}
+
+	public JFileChooser getWorkingDirChooserDialog() {
+		return this.workingDirDialog_fCh;
+	}
+
+	public JFileChooser getCompareDirChooserDialog() {
+		return this.compareDirDialog_fCh;
+	}
+
+	public void setNewWorkingCurrentDirLbl(final String s) {
+		this.workingCurrentDirLbl.setText(s);
+	}
+
+	public void setNewCompareCurrentDirLbl(final String s) {
+		this.compareCurrentDirLbl.setText(s);
 	}
 
 	public void appendSNRResult(final PTFilesAnalyzer mSNRfinder) {
