@@ -1,19 +1,21 @@
 package gui;
 
 import java.awt.BorderLayout;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.io.File;
 
-import javax.swing.Box;
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 
 import core.PTFilesAnalyzer;
 
@@ -32,7 +34,7 @@ public class OmegaGenericToolGUI {
 
 	private JTextArea results_txtA;
 
-	private JButton generateTrajFiles_btt;
+	private JButton generateSingleTrajFiles_btt;
 	private JButton computeSNRData_btt;
 	private JButton computeSNRMeanData_btt;
 	private JButton computeP2PDist_btt;
@@ -44,6 +46,12 @@ public class OmegaGenericToolGUI {
 	private JLabel compareCurrentDirLbl;
 
 	private JButton aggregateTrajData_btt;
+
+	private JTextField filterTrajLenght_txt;
+	private JCheckBox analyzeOnlyTraj_chkb, mergeTraj_chkb;
+	private JCheckBox analyzeFilteredTraj_chkb, analyzeMergedTraj_chkb,
+	        analyzeImageLog_chkb;
+	private JButton analyzeAndFilterTraj_btt;
 
 	/**
 	 * Create the main frame and invoke all the needed methods
@@ -87,116 +95,144 @@ public class OmegaGenericToolGUI {
 	 * @since 0.0
 	 */
 	private void addWidgets() {
-		this.mainFrame.getContentPane()
-		        .setLayout(
-		                new BoxLayout(this.mainFrame.getContentPane(),
-		                        BoxLayout.Y_AXIS));
+		final Container cont = this.mainFrame.getContentPane();
+		cont.setLayout(new BorderLayout());
 
-		this.mainFrame.getContentPane().add(this.createMainPanel());
-		this.addHorizontalSeparator();
+		final JPanel workingPanel = this.createWorkingPanel();
+		final JPanel comparePanel = this.createComparePanel();
+		final JPanel buttonPanel1 = this.createButtonPanel1();
+		final JPanel buttonPanel2 = this.createButtonPanel2();
+		final JPanel optionsTrajPanel = this.createOptionsTrajPanel();
+		final JPanel filterTrajPanel = this.createTrajFilterPanel();
 
-		this.mainFrame.getContentPane().add(this.createComparePanel());
-		this.addHorizontalSeparator();
+		final JPanel topPanel = new JPanel();
+		topPanel.setLayout(new BorderLayout());
 
-		this.mainFrame.getContentPane()
-		        .add(this.createAggregateTrajDataPanel());
-		this.addHorizontalSeparator();
+		final JPanel folderPanel = new JPanel();
+		folderPanel.setLayout(new BorderLayout());
+		folderPanel.add(workingPanel, BorderLayout.WEST);
+		folderPanel.add(comparePanel, BorderLayout.EAST);
 
-		this.mainFrame.getContentPane().add(this.generateResultsPanel());
+		topPanel.add(folderPanel, BorderLayout.NORTH);
+		topPanel.add(optionsTrajPanel, BorderLayout.SOUTH);
+
+		final JPanel mainPanel = new JPanel();
+		mainPanel.setLayout(new BorderLayout());
+
+		mainPanel.add(topPanel, BorderLayout.NORTH);
+		mainPanel.add(buttonPanel1, BorderLayout.WEST);
+		mainPanel.add(buttonPanel2, BorderLayout.EAST);
+		mainPanel.add(filterTrajPanel, BorderLayout.SOUTH);
+
+		cont.add(mainPanel, BorderLayout.NORTH);
+
+		final JPanel resultsPanel = this.generateResultsPanel();
+		cont.add(resultsPanel, BorderLayout.CENTER);
 	}
 
-	/**
-	 * Add an horizontal separator
-	 * 
-	 * @since 0.0
-	 */
-	private void addHorizontalSeparator() {
-		this.mainFrame.getContentPane().add(Box.createVerticalStrut(5));
-		this.mainFrame.getContentPane().add(new JSeparator());
-		this.mainFrame.getContentPane().add(Box.createVerticalStrut(5));
-	}
-
-	/**
-	 * Create the main informations panel
-	 * 
-	 * @return
-	 * 
-	 * @since 0.0
-	 */
-	private JPanel createMainPanel() {
+	public JPanel createWorkingPanel() {
 		final JPanel panel = new JPanel();
-		panel.setLayout(new BorderLayout());
+		panel.setLayout(new GridLayout(3, 1));
 
-		final JPanel topSubPanel = new JPanel();
-		topSubPanel.setLayout(new GridLayout(3, 1));
-
-		topSubPanel.add(new JLabel("Actual working folder:"));
+		panel.add(new JLabel("Actual working folder:"));
 		final String workingFolder = this.workingDirDialog_fCh
 		        .getCurrentDirectory().getPath();
 		this.workingCurrentDirLbl = new JLabel(workingFolder);
-		topSubPanel.add(this.workingCurrentDirLbl);
+		panel.add(this.workingCurrentDirLbl);
 		this.workingDirChooser_btt = new JButton("Choose the working directory");
-		topSubPanel.add(this.workingDirChooser_btt);
+		panel.add(this.workingDirChooser_btt);
 
-		panel.add(topSubPanel, BorderLayout.NORTH);
+		return panel;
+	}
 
-		final JPanel subPanel = new JPanel();
-		subPanel.setLayout(new GridLayout(4, 1));
+	public JPanel createButtonPanel1() {
+		final JPanel panel = new JPanel();
+		panel.setLayout(new GridLayout(4, 1));
 
-		this.generateTrajFiles_btt = new JButton("Generate trajectories files");
-		subPanel.add(this.generateTrajFiles_btt);
+		this.generateSingleTrajFiles_btt = new JButton(
+		        "Generate single traj files");
+		panel.add(this.generateSingleTrajFiles_btt);
 
 		this.computeSNRData_btt = new JButton("Compute SNR data");
-		subPanel.add(this.computeSNRData_btt);
+		panel.add(this.computeSNRData_btt);
 
 		this.computeSNRMeanData_btt = new JButton("Compute SNR mean data");
-		subPanel.add(this.computeSNRMeanData_btt);
+		panel.add(this.computeSNRMeanData_btt);
 
 		this.computeP2PDist_btt = new JButton("Compute P2P distance");
-		subPanel.add(this.computeP2PDist_btt);
-
-		panel.add(subPanel, BorderLayout.CENTER);
+		panel.add(this.computeP2PDist_btt);
 
 		return panel;
 	}
 
 	private JPanel createComparePanel() {
 		final JPanel panel = new JPanel();
-		panel.setLayout(new BorderLayout());
+		panel.setLayout(new GridLayout(3, 1));
 
-		final JPanel subPanel = new JPanel();
-		subPanel.setLayout(new GridLayout(5, 1));
-
-		subPanel.add(new JLabel("Actual compare folder:"));
+		panel.add(new JLabel("Actual compare folder:"));
 		final String compareFolder = this.compareDirDialog_fCh
 		        .getCurrentDirectory().getPath();
 		this.compareCurrentDirLbl = new JLabel(compareFolder);
-		subPanel.add(this.compareCurrentDirLbl);
+		panel.add(this.compareCurrentDirLbl);
 		this.compareDirChooser_btt = new JButton("Choose the compare directory");
-		subPanel.add(this.compareDirChooser_btt);
-
-		this.compare_btt = new JButton("Compare images");
-		subPanel.add(this.compare_btt);
-
-		this.compareWithDistr_btt = new JButton("Compare images with distr");
-		subPanel.add(this.compareWithDistr_btt);
-
-		panel.add(subPanel, BorderLayout.CENTER);
+		panel.add(this.compareDirChooser_btt);
 
 		return panel;
 	}
 
-	private JPanel createAggregateTrajDataPanel() {
+	public JPanel createButtonPanel2() {
 		final JPanel panel = new JPanel();
-		panel.setLayout(new BorderLayout());
+		panel.setLayout(new GridLayout(4, 1));
 
-		final JPanel subPanel = new JPanel();
-		subPanel.setLayout(new GridLayout(1, 1));
+		this.compare_btt = new JButton("Compare images");
+		panel.add(this.compare_btt);
+
+		this.compareWithDistr_btt = new JButton("Compare images with distr");
+		panel.add(this.compareWithDistr_btt);
+
+		panel.add(new JLabel());
 
 		this.aggregateTrajData_btt = new JButton("Aggregate traj data");
-		subPanel.add(this.aggregateTrajData_btt);
+		panel.add(this.aggregateTrajData_btt);
 
-		panel.add(subPanel, BorderLayout.CENTER);
+		return panel;
+	}
+
+	private JPanel createTrajFilterPanel() {
+		final JPanel panel = new JPanel();
+		panel.setLayout(new FlowLayout());
+
+		final JLabel lbl = new JLabel("Insert min traj lenght");
+		panel.add(lbl);
+
+		this.filterTrajLenght_txt = new JTextField();
+		this.filterTrajLenght_txt.setPreferredSize(new Dimension(200, 27));
+		panel.add(this.filterTrajLenght_txt);
+
+		this.analyzeOnlyTraj_chkb = new JCheckBox("Analyze only");
+		panel.add(this.analyzeOnlyTraj_chkb);
+
+		this.mergeTraj_chkb = new JCheckBox("Merge trajectories");
+		panel.add(this.mergeTraj_chkb);
+
+		this.analyzeAndFilterTraj_btt = new JButton("Filter trajectories");
+		panel.add(this.analyzeAndFilterTraj_btt);
+
+		return panel;
+	}
+
+	private JPanel createOptionsTrajPanel() {
+		final JPanel panel = new JPanel();
+		panel.setLayout(new FlowLayout());
+
+		this.analyzeFilteredTraj_chkb = new JCheckBox("Analyze filtered traj");
+		panel.add(this.analyzeFilteredTraj_chkb);
+
+		this.analyzeMergedTraj_chkb = new JCheckBox("Analyze merged traj");
+		panel.add(this.analyzeMergedTraj_chkb);
+
+		this.analyzeImageLog_chkb = new JCheckBox("Analyze image log");
+		panel.add(this.analyzeImageLog_chkb);
 
 		return panel;
 	}
@@ -239,7 +275,7 @@ public class OmegaGenericToolGUI {
 	 */
 	private void addListeners() {
 		OmegaGenericToolGUIListeners.addWorkingDirChooser(this);
-		OmegaGenericToolGUIListeners.addGenerateTrajFiles(this);
+		OmegaGenericToolGUIListeners.addGenerateSingleTrajFiles(this);
 		// OmegaGenericToolGUIListeners.addComputeSNRData(this);
 		OmegaGenericToolGUIListeners.addComputeMeanSNRData(this);
 
@@ -250,14 +286,16 @@ public class OmegaGenericToolGUI {
 		OmegaGenericToolGUIListeners.addCompareImagesWithDistr(this);
 
 		OmegaGenericToolGUIListeners.addAggregateTrajData(this);
+
+		OmegaGenericToolGUIListeners.addAnalyzeAndFilterTrajectories(this);
 	}
 
 	private void setDefaultValues() {
 
 	}
 
-	public JButton getGenerateTrajFilesButt() {
-		return this.generateTrajFiles_btt;
+	public JButton getGenerateSingleTrajFilesButt() {
+		return this.generateSingleTrajFiles_btt;
 	}
 
 	public JButton getComputeSNRDataButt() {
@@ -282,6 +320,34 @@ public class OmegaGenericToolGUI {
 
 	public JButton getAggregateTrajDataButt() {
 		return this.aggregateTrajData_btt;
+	}
+
+	public JButton getAnalyzeAndFilterTrajButt() {
+		return this.analyzeAndFilterTraj_btt;
+	}
+
+	public boolean isAnalyzeOnly() {
+		return this.analyzeOnlyTraj_chkb.isSelected();
+	}
+
+	public boolean isMergeTraj() {
+		return this.mergeTraj_chkb.isSelected();
+	}
+
+	public boolean isAnalyzeFilteredTraj() {
+		return this.analyzeFilteredTraj_chkb.isSelected();
+	}
+
+	public boolean isAnalyzeMergedTraj() {
+		return this.analyzeMergedTraj_chkb.isSelected();
+	}
+
+	public boolean isAnalyzeImageLog() {
+		return this.analyzeImageLog_chkb.isSelected();
+	}
+
+	public int getTrajFilter() {
+		return Integer.valueOf(this.filterTrajLenght_txt.getText());
 	}
 
 	/**
@@ -351,5 +417,12 @@ public class OmegaGenericToolGUI {
 		        + mSNRfinder.getMeanParticlePerFrame());
 		this.appendResultsText("Mean size: " + mSNRfinder.getMeanParticleSize());
 		this.appendResultsText("#######################");
+	}
+
+	public void appendOutput(final String output) {
+		this.results_txtA.append(output);
+		this.results_txtA.append("\n");
+		this.results_txtA.setCaretPosition(this.results_txtA.getDocument()
+		        .getLength());
 	}
 }

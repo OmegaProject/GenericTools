@@ -1,17 +1,22 @@
 package core;
 
+import gui.OmegaGenericToolGUI;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class TrajDataAggregator {
+import javax.swing.SwingUtilities;
+
+public class TrajDataAggregator implements Runnable {
 
 	public final static String fileName1 = "track_";
 
@@ -21,11 +26,83 @@ public class TrajDataAggregator {
 	private final Map<Integer, List<Double>> yCoords;
 	private final Map<Integer, List<Double>> yNoiseCoords;
 
-	public TrajDataAggregator() {
+	private final File workingDir;
+	private final OmegaGenericToolGUI gui;
+
+	public TrajDataAggregator(final File workingDir,
+	        final OmegaGenericToolGUI gui) {
+		this.workingDir = workingDir;
 		this.xCoords = new HashMap<Integer, List<Double>>();
 		this.xNoiseCoords = new HashMap<Integer, List<Double>>();
 		this.yCoords = new HashMap<Integer, List<Double>>();
 		this.yNoiseCoords = new HashMap<Integer, List<Double>>();
+		this.gui = gui;
+	}
+
+	@Override
+	public void run() {
+		final List<File> trajFiles = new ArrayList<File>();
+		final List<File> noisyTrajFiles = new ArrayList<File>();
+		final File resultsFile = new File(this.workingDir.getPath()
+		        + "\\aggregateData.txt");
+
+		int totalFiles = 0;
+		for (final File trajFile : this.workingDir.listFiles()) {
+			final String trackFileName = trajFile.getName();
+			if (!trackFileName.contains(".out")
+			        || trackFileName.contains("_noise")) {
+				continue;
+			}
+			totalFiles++;
+		}
+
+		int analyzedFiles = 0;
+		for (final File trajFile : this.workingDir.listFiles()) {
+			final String trackFileName = trajFile.getName();
+			if (!trackFileName.contains(".out")
+			        || trackFileName.contains("_noise")) {
+				continue;
+			}
+
+			final int index = trackFileName.lastIndexOf(".");
+			String noisyTrackFileName = trackFileName.substring(0, index);
+			noisyTrackFileName += "_noise.out";
+			final File noisyTrajFile = new File(
+			        this.workingDir.getAbsolutePath() + File.separatorChar
+			                + noisyTrackFileName);
+
+			trajFiles.add(trajFile);
+			noisyTrajFiles.add(noisyTrajFile);
+			analyzedFiles++;
+			this.updateGUI("File: " + analyzedFiles + "/" + totalFiles);
+		}
+		try {
+
+			this.aggregateTrajData(trajFiles.toArray(),
+			        noisyTrajFiles.toArray(), resultsFile);
+		} catch (final IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	public void updateGUI(final String update) {
+		try {
+			SwingUtilities.invokeAndWait(new Runnable() {
+
+				@Override
+				public void run() {
+					TrajDataAggregator.this.gui.appendOutput(update);
+
+				}
+			});
+		} catch (final InvocationTargetException ex) {
+			// TODO Auto-generated catch block
+			ex.printStackTrace();
+		} catch (final InterruptedException ex) {
+			// TODO Auto-generated catch block
+			ex.printStackTrace();
+		}
 	}
 
 	public void aggregateTrajData(final Object[] objects,

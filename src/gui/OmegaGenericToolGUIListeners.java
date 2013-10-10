@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +16,9 @@ import javax.swing.JFileChooser;
 import core.ImageComparator;
 import core.P2PDistanceCalculator;
 import core.PTFilesAnalyzer;
+import core.SingleTrajectoryGenerator;
 import core.TrajDataAggregator;
+import core.TrajectoriesAnalyzerAndFilter;
 
 public class OmegaGenericToolGUIListeners {
 	public static void addAggregateTrajData(final OmegaGenericToolGUI mainGUI) {
@@ -25,37 +26,30 @@ public class OmegaGenericToolGUIListeners {
 		        new ActionListener() {
 			        @Override
 			        public void actionPerformed(final ActionEvent arg0) {
-				        final File directory = mainGUI.getWorkingDirectory();
-				        final List<File> trajFiles = new ArrayList<File>();
-				        final List<File> noisyTrajFiles = new ArrayList<File>();
-				        final File resultsFile = new File(directory.getPath()
-				                + "\\aggregateData.txt");
+				        final File workingDir = mainGUI.getWorkingDirectory();
+				        final TrajDataAggregator tda = new TrajDataAggregator(
+				                workingDir, mainGUI);
+				        final Thread t = new Thread(tda);
+				        t.start();
+			        }
+		        });
+	}
 
-				        for (final File trajFile : directory.listFiles()) {
-					        final String trackFileName = trajFile.getName();
-					        if (!trackFileName.contains(".out")
-					                || trackFileName.contains("_noise")) {
-						        continue;
-					        }
+	public static void addWorkingDirChooser(final OmegaGenericToolGUI mainGUI) {
+		mainGUI.getWorkingDirChooserButton().addActionListener(
+		        new ActionListener() {
 
-					        final int index = trackFileName.lastIndexOf(".");
-					        String noisyTrackFileName = trackFileName
-					                .substring(0, index);
-					        noisyTrackFileName += "_noise.out";
-					        final File noisyTrajFile = new File(directory
-					                + "\\" + noisyTrackFileName);
-
-					        trajFiles.add(trajFile);
-					        noisyTrajFiles.add(noisyTrajFile);
-				        }
-				        final TrajDataAggregator tda = new TrajDataAggregator();
-				        try {
-
-					        tda.aggregateTrajData(trajFiles.toArray(),
-					                noisyTrajFiles.toArray(), resultsFile);
-				        } catch (final IOException e) {
-					        // TODO Auto-generated catch block
-					        e.printStackTrace();
+			        @Override
+			        public void actionPerformed(final ActionEvent evt) {
+				        final JFileChooser fc = mainGUI
+				                .getWorkingDirChooserDialog();
+				        fc.showOpenDialog(fc);
+				        if (fc.getSelectedFile() != null) {
+					        mainGUI.setNewWorkingCurrentDirLbl(fc
+					                .getSelectedFile().getPath());
+				        } else {
+					        mainGUI.setNewWorkingCurrentDirLbl(fc
+					                .getCurrentDirectory().getPath());
 				        }
 			        }
 		        });
@@ -88,46 +82,14 @@ public class OmegaGenericToolGUIListeners {
 			        public void actionPerformed(final ActionEvent e) {
 				        final File workingDir = mainGUI.getWorkingDirectory();
 				        final File compareDir = mainGUI.getCompareDirectory();
-				        final ImageComparator mSNRfinder = new ImageComparator(
-				                workingDir, compareDir);
+				        final boolean analyzeImageLog = mainGUI
+				                .isAnalyzeImageLog();
+				        final ImageComparator imageComparison = new ImageComparator(
+				                workingDir, compareDir, true, analyzeImageLog,
+				                mainGUI);
 
-				        try {
-					        mSNRfinder.compareImages(true);
-				        } catch (final IOException e1) {
-					        // TODO Auto-generated catch block
-					        e1.printStackTrace();
-				        }
-
-				        final Integer numberOfFrames = mSNRfinder
-				                .getNumberOfFrames();
-				        final Integer numberOfDifferentPixels = mSNRfinder
-				                .getNumberOfDifferentPixels();
-				        final Integer totalNumberOfPixels = mSNRfinder
-				                .getTotalNumberOfPixels();
-				        final Integer minDifference = mSNRfinder
-				                .getMinDifference();
-				        final Integer maxDifference = mSNRfinder
-				                .getMaxDifference();
-				        final Double meanDifference = mSNRfinder
-				                .getMeanDifference();
-				        final Double meanDifferentPixelsPerImage = mSNRfinder
-				                .getMeanDifferentPixelPerImage();
-
-				        mainGUI.appendResultsText("Comparison results with distr:");
-				        mainGUI.appendResultsText("Frames:\t" + numberOfFrames);
-				        mainGUI.appendResultsText("Different pixels:\t"
-				                + numberOfDifferentPixels);
-				        mainGUI.appendResultsText("Total pixels:\t"
-				                + totalNumberOfPixels);
-				        mainGUI.appendResultsText("Min difference:\t"
-				                + minDifference);
-				        mainGUI.appendResultsText("Mean difference:\t"
-				                + meanDifference);
-				        mainGUI.appendResultsText("Max difference:\t"
-				                + maxDifference);
-				        mainGUI.appendResultsText("Mean different pixels per image:\t"
-				                + meanDifferentPixelsPerImage);
-				        mainGUI.appendResultsText("###################");
+				        final Thread t = new Thread(imageComparison);
+				        t.start();
 			        }
 		        });
 	}
@@ -138,61 +100,14 @@ public class OmegaGenericToolGUIListeners {
 			public void actionPerformed(final ActionEvent e) {
 				final File workingDir = mainGUI.getWorkingDirectory();
 				final File compareDir = mainGUI.getCompareDirectory();
-				final ImageComparator mSNRfinder = new ImageComparator(
-				        workingDir, compareDir);
+				final boolean analyzeImageLog = mainGUI.isAnalyzeImageLog();
+				final ImageComparator imageComparison = new ImageComparator(
+				        workingDir, compareDir, false, analyzeImageLog, mainGUI);
 
-				try {
-					mSNRfinder.compareImages(false);
-				} catch (final IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-
-				final Integer numberOfFrames = mSNRfinder.getNumberOfFrames();
-				final Integer numberOfDifferentPixels = mSNRfinder
-				        .getNumberOfDifferentPixels();
-				final Integer totalNumberOfPixels = mSNRfinder
-				        .getTotalNumberOfPixels();
-				final Integer minDifference = mSNRfinder.getMinDifference();
-				final Integer maxDifference = mSNRfinder.getMaxDifference();
-				final Double meanDifference = mSNRfinder.getMeanDifference();
-				final Double meanDifferentPixelsPerImage = mSNRfinder
-				        .getMeanDifferentPixelPerImage();
-
-				mainGUI.appendResultsText("Comparison results:");
-				mainGUI.appendResultsText("Frames:\t" + numberOfFrames);
-				mainGUI.appendResultsText("Different pixels:\t"
-				        + numberOfDifferentPixels);
-				mainGUI.appendResultsText("Total pixels:\t"
-				        + totalNumberOfPixels);
-				mainGUI.appendResultsText("Min difference:\t" + minDifference);
-				mainGUI.appendResultsText("Mean difference:\t" + meanDifference);
-				mainGUI.appendResultsText("Max difference:\t" + maxDifference);
-				mainGUI.appendResultsText("Mean different pixels per image:\t"
-				        + meanDifferentPixelsPerImage);
-				mainGUI.appendResultsText("###################");
+				final Thread t = new Thread(imageComparison);
+				t.start();
 			}
 		});
-	}
-
-	public static void addWorkingDirChooser(final OmegaGenericToolGUI mainGUI) {
-		mainGUI.getWorkingDirChooserButton().addActionListener(
-		        new ActionListener() {
-
-			        @Override
-			        public void actionPerformed(final ActionEvent evt) {
-				        final JFileChooser fc = mainGUI
-				                .getWorkingDirChooserDialog();
-				        fc.showOpenDialog(fc);
-				        if (fc.getSelectedFile() != null) {
-					        mainGUI.setNewWorkingCurrentDirLbl(fc
-					                .getSelectedFile().getPath());
-				        } else {
-					        mainGUI.setNewWorkingCurrentDirLbl(fc
-					                .getCurrentDirectory().getPath());
-				        }
-			        }
-		        });
 	}
 
 	public static void addComputeMeanSNRData(final OmegaGenericToolGUI mainGUI) {
@@ -330,128 +245,67 @@ public class OmegaGenericToolGUIListeners {
 		        new ActionListener() {
 			        @Override
 			        public void actionPerformed(final ActionEvent evt) {
-				        final File directory = mainGUI.getWorkingDirectory();
+				        final File workingDir = mainGUI.getWorkingDirectory();
+				        final boolean analyzeFilteredTraj = mainGUI
+				                .isAnalyzeFilteredTraj();
+				        final boolean analyzeMergedTraj = mainGUI
+				                .isAnalyzeMergedTraj();
 
-				        for (final File parentDirectory : directory.listFiles()) {
-					        if (!parentDirectory.isDirectory()
-					                || parentDirectory.getName().toLowerCase()
-					                        .contains(".bin")) {
-						        continue;
-					        }
+				        final P2PDistanceCalculator calc = new P2PDistanceCalculator(
+				                workingDir, analyzeFilteredTraj,
+				                analyzeMergedTraj, mainGUI);
 
-					        mainGUI.appendResultsText("Folder\t"
-					                + parentDirectory.getName());
-
-					        for (final File imageDirectory : parentDirectory
-					                .listFiles()) {
-						        if (!imageDirectory.isDirectory()) {
-							        continue;
-						        }
-						        new HashMap<Double, List<StringBuffer[]>>();
-
-						        mainGUI.appendResultsText("Dataset\t"
-						                + imageDirectory.getName());
-						        final File logsDir = new File(imageDirectory
-						                .getPath() + "/logs");
-						        File trajectories = null;
-						        final List<File> logs = new ArrayList<File>();
-						        for (final File file : logsDir.listFiles()) {
-							        final String framesFileName = file
-							                .getName();
-							        if (!framesFileName
-							                .contains(P2PDistanceCalculator.fileName1)
-							                && !framesFileName
-							                        .contains(P2PDistanceCalculator.fileName2)) {
-								        continue;
-							        }
-
-							        System.out.println("File: "
-							                + framesFileName);
-							        if (framesFileName
-							                .contains(P2PDistanceCalculator.fileName2)) {
-								        // GET generated positions
-								        logs.add(file);
-							        } else {
-								        trajectories = file;
-								        // GET computed positions
-							        }
-						        }
-						        final P2PDistanceCalculator p2pCalc = new P2PDistanceCalculator(
-						                trajectories, logs);
-						        // feed particles list to a computer and
-						        // computer distances
-
-						        try {
-							        p2pCalc.computeBiasAndSigma();
-							        p2pCalc.writeResultsFile(logsDir);
-						        } catch (final IOException e) {
-							        // TODO Auto-generated catch
-							        // block
-							        e.printStackTrace();
-						        }
-					        }
-				        }
+				        final Thread t = new Thread(calc);
+				        t.start();
 			        }
 		        });
 	}
 
-	public static void addGenerateTrajFiles(final OmegaGenericToolGUI mainGUI) {
-		mainGUI.getGenerateTrajFilesButt().addActionListener(
+	public static void addGenerateSingleTrajFiles(
+	        final OmegaGenericToolGUI mainGUI) {
+		mainGUI.getGenerateSingleTrajFilesButt().addActionListener(
 		        new ActionListener() {
 
 			        @Override
 			        public void actionPerformed(final ActionEvent evt) {
+				        final File workingDir = mainGUI.getWorkingDirectory();
+				        final boolean analyzeFilteredTraj = mainGUI
+				                .isAnalyzeFilteredTraj();
+				        final boolean analyzeMergedTraj = mainGUI
+				                .isAnalyzeMergedTraj();
 
-				        final File directory = mainGUI.getWorkingDirectory();
+				        final SingleTrajectoryGenerator stg = new SingleTrajectoryGenerator(
+				                workingDir, analyzeFilteredTraj,
+				                analyzeMergedTraj, mainGUI);
 
-				        for (final File parentDirectory : directory.listFiles()) {
-					        if (!parentDirectory.isDirectory()
-					                || parentDirectory.getName().toLowerCase()
-					                        .contains(".bin")) {
-						        continue;
-					        }
+				        final Thread t = new Thread(stg);
+				        t.start();
+			        }
+		        });
+	}
 
-					        mainGUI.appendResultsText("Folder\t"
-					                + parentDirectory.getName());
-					        for (final File imageDirectory : parentDirectory
-					                .listFiles()) {
-						        if (!imageDirectory.isDirectory()) {
-							        continue;
-						        }
-						        mainGUI.appendResultsText("Dataset\t"
-						                + imageDirectory.getName());
-						        File trajsFile = null;
-						        for (final File file : imageDirectory
-						                .listFiles()) {
-							        if (file.getName().contains(
-							                PTFilesAnalyzer.fileName2)) {
-								        trajsFile = file;
-							        }
-						        }
+	public static void addAnalyzeAndFilterTrajectories(
+	        final OmegaGenericToolGUI mainGUI) {
+		mainGUI.getAnalyzeAndFilterTrajButt().addActionListener(
+		        new ActionListener() {
+			        @Override
+			        public void actionPerformed(final ActionEvent evt) {
+				        final File workingDir = mainGUI.getWorkingDirectory();
 
-						        if ((trajsFile != null)) {
-							        final PTFilesAnalyzer mSNRfinder = new PTFilesAnalyzer(
-							                imageDirectory);
-							        try {
-								        mSNRfinder
-								                .generateSingleTrajectories(trajsFile);
-							        } catch (final IOException ex) {
-								        // TODO Auto-generated catch block
-								        ex.printStackTrace();
-								        mainGUI.appendResultsText(ex
-								                .getMessage());
-							        }
+				        final int filter = mainGUI.getTrajFilter();
+				        final boolean analysisOnly = mainGUI.isAnalyzeOnly();
+				        final boolean mergeTraj = mainGUI.isMergeTraj();
+				        final boolean analyzeFilteredTraj = mainGUI
+				                .isAnalyzeFilteredTraj();
+				        final boolean analyzeMergedTraj = mainGUI
+				                .isAnalyzeMergedTraj();
 
-							        for (final String error : mSNRfinder.errors) {
-								        mainGUI.appendResultsText(error);
-							        }
-						        } else {
-							        mainGUI.appendResultsText("Files PTTrajectories_* not found in folder "
-							                + imageDirectory.getPath());
-						        }
-					        }
-				        }
-				        mainGUI.appendResultsText("Finished");
+				        final TrajectoriesAnalyzerAndFilter TAF = new TrajectoriesAnalyzerAndFilter(
+				                workingDir, filter, analysisOnly, mergeTraj,
+				                analyzeFilteredTraj, analyzeMergedTraj, mainGUI);
+
+				        final Thread t = new Thread(TAF);
+				        t.start();
 			        }
 		        });
 	}
