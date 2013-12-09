@@ -24,8 +24,8 @@ public class MyPoint {
 	 * 
 	 * @since 1.0
 	 */
-	public MyPoint() {
-		this(0.0, 0.0);
+	public MyPoint(final int precision) {
+		this(0.0, 0.0, precision);
 	}
 
 	/**
@@ -37,9 +37,11 @@ public class MyPoint {
 	 * 
 	 * @since 1.0
 	 */
-	public MyPoint(final Double xD, final Double yD) {
-		this.xD = BigDecimal.valueOf(xD).setScale(2, RoundingMode.HALF_UP);
-		this.yD = BigDecimal.valueOf(yD).setScale(2, RoundingMode.HALF_UP);
+	public MyPoint(final Double xD, final Double yD, final int precision) {
+		this.xD = BigDecimal.valueOf(xD).setScale(precision,
+		        RoundingMode.HALF_UP);
+		this.yD = BigDecimal.valueOf(yD).setScale(precision,
+		        RoundingMode.HALF_UP);
 
 		this.computeIntegerValues();
 	}

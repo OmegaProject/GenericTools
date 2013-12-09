@@ -84,6 +84,7 @@ public class TrajDataAggregator implements Runnable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		this.updateGUI("Trajectories aggregated");
 	}
 
 	public void updateGUI(final String update) {

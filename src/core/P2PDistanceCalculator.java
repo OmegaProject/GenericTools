@@ -9,6 +9,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +18,9 @@ import java.util.Map;
 import javax.swing.SwingUtilities;
 
 public class P2PDistanceCalculator implements Runnable {
+
+	int precision = 15;
+
 	public final static String fileName1 = "PT_Trajectories_";
 	public final static String fileName2 = "ParticleLog_";
 
@@ -29,10 +33,10 @@ public class P2PDistanceCalculator implements Runnable {
 	private final List<File> logs;
 	private final Map<Integer, List<MyPoint>> computedPoints;
 	private final Map<Integer, List<MyPoint>> generatedPoints;
-	private final List<Double> genXElements, genYElements;
-	private final List<Double> comXElements, comYElements;
-	private final List<Double> distXElements, distYElements;
-	private final List<Double> distABSXElements, distABSYElements;
+	private final List<BigDecimal> genXElements, genYElements;
+	private final List<BigDecimal> comXElements, comYElements;
+	private final List<BigDecimal> distXElements, distYElements;
+	private final List<BigDecimal> distABSXElements, distABSYElements;
 
 	private double biasX, biasY, sigmaX, sigmaY;
 	private double biasABSX, biasABSY, sigmaABSX, sigmaABSY;
@@ -51,14 +55,14 @@ public class P2PDistanceCalculator implements Runnable {
 		this.logs = new ArrayList<File>();
 		this.computedPoints = new HashMap<Integer, List<MyPoint>>();
 		this.generatedPoints = new HashMap<Integer, List<MyPoint>>();
-		this.genXElements = new ArrayList<Double>();
-		this.genYElements = new ArrayList<Double>();
-		this.comXElements = new ArrayList<Double>();
-		this.comYElements = new ArrayList<Double>();
-		this.distXElements = new ArrayList<Double>();
-		this.distYElements = new ArrayList<Double>();
-		this.distABSXElements = new ArrayList<Double>();
-		this.distABSYElements = new ArrayList<Double>();
+		this.genXElements = new ArrayList<BigDecimal>();
+		this.genYElements = new ArrayList<BigDecimal>();
+		this.comXElements = new ArrayList<BigDecimal>();
+		this.comYElements = new ArrayList<BigDecimal>();
+		this.distXElements = new ArrayList<BigDecimal>();
+		this.distYElements = new ArrayList<BigDecimal>();
+		this.distABSXElements = new ArrayList<BigDecimal>();
+		this.distABSYElements = new ArrayList<BigDecimal>();
 		this.biasX = 0.0;
 		this.biasY = 0.0;
 		this.sigmaX = 0.0;
@@ -127,7 +131,7 @@ public class P2PDistanceCalculator implements Runnable {
 				final int frame = Integer.valueOf(values.get(0));
 				final double y = Double.valueOf(values.get(1));
 				final double x = Double.valueOf(values.get(2));
-				final MyPoint particle = new MyPoint(x, y);
+				final MyPoint particle = new MyPoint(x, y, this.precision);
 				List<MyPoint> frameParticles;
 				if (this.computedPoints.containsKey(frame)) {
 					frameParticles = this.computedPoints.get(frame);
@@ -185,7 +189,7 @@ public class P2PDistanceCalculator implements Runnable {
 					}
 					final double x = Double.valueOf(values.get(0));
 					final double y = Double.valueOf(values.get(1));
-					final MyPoint particle = new MyPoint(x, y);
+					final MyPoint particle = new MyPoint(x, y, this.precision);
 					List<MyPoint> frameParticles;
 					if (this.generatedPoints.containsKey(frame)) {
 						frameParticles = this.generatedPoints.get(frame);
@@ -220,18 +224,18 @@ public class P2PDistanceCalculator implements Runnable {
 			for (int particleIndex = 0; particleIndex < genPoints.size(); particleIndex++) {
 				final MyPoint genParticle = genPoints.get(particleIndex);
 				final MyPoint compParticle = comPoints.get(particleIndex);
-				final double xDist = genParticle.xD.subtract(compParticle.xD)
-				        .doubleValue();
-				final double yDist = genParticle.yD.subtract(compParticle.yD)
-				        .doubleValue();
-				this.genXElements.add(genParticle.xD.doubleValue());
-				this.genYElements.add(genParticle.yD.doubleValue());
-				this.comXElements.add(compParticle.xD.doubleValue());
-				this.comYElements.add(compParticle.yD.doubleValue());
+				final BigDecimal xDist = genParticle.xD
+				        .subtract(compParticle.xD);
+				final BigDecimal yDist = genParticle.yD
+				        .subtract(compParticle.yD);
+				this.genXElements.add(genParticle.xD);
+				this.genYElements.add(genParticle.yD);
+				this.comXElements.add(compParticle.xD);
+				this.comYElements.add(compParticle.yD);
 				this.distXElements.add(xDist);
-				this.distABSXElements.add(Math.abs(xDist));
+				this.distABSXElements.add(xDist.abs());
 				this.distYElements.add(yDist);
-				this.distABSYElements.add(Math.abs(yDist));
+				this.distABSYElements.add(yDist.abs());
 			}
 		}
 	}
@@ -314,21 +318,21 @@ public class P2PDistanceCalculator implements Runnable {
 
 	private void computeBiasAndSigma() {
 		final StatisticalCalculator statX = new StatisticalCalculator(
-		        this.distXElements);
+		        this.distXElements, this.precision);
 		final StatisticalCalculator statY = new StatisticalCalculator(
-		        this.distYElements);
+		        this.distYElements, this.precision);
 		final StatisticalCalculator statABSX = new StatisticalCalculator(
-		        this.distABSXElements);
+		        this.distABSXElements, this.precision);
 		final StatisticalCalculator statABSY = new StatisticalCalculator(
-		        this.distABSYElements);
-		this.biasX = statX.getMean();
-		this.biasY = statY.getMean();
-		this.sigmaX = statX.getStdDev();
-		this.sigmaY = statY.getStdDev();
-		this.biasABSX = statABSX.getMean();
-		this.biasABSY = statABSY.getMean();
-		this.sigmaABSX = statABSX.getStdDev();
-		this.sigmaABSY = statABSY.getStdDev();
+		        this.distABSYElements, this.precision);
+		this.biasX = statX.getDoubleMean();
+		this.biasY = statY.getDoubleMean();
+		this.sigmaX = statX.getDoubleStdDev();
+		this.sigmaY = statY.getDoubleStdDev();
+		this.biasABSX = statABSX.getDoubleMean();
+		this.biasABSY = statABSY.getDoubleMean();
+		this.sigmaABSX = statABSX.getDoubleStdDev();
+		this.sigmaABSY = statABSY.getDoubleStdDev();
 	}
 
 	public void perImageReset() {
@@ -372,142 +376,138 @@ public class P2PDistanceCalculator implements Runnable {
 		        + File.separatorChar + "P2PDistanceCalculator_Results.txt");
 		final FileWriter fw = new FileWriter(resultsFile);
 		final BufferedWriter bw = new BufferedWriter(fw);
-		final StringBuffer genXElements = new StringBuffer(
-		        "Generated x elements:\t");
-		int index = 0;
-		for (final double genXEle : this.genXElements) {
-			genXElements.append(genXEle);
-			if ((index % 10000) == 0) {
-				genXElements.append("\n");
-			} else {
-				genXElements.append("\t");
-			}
-			index++;
-		}
-		genXElements.append("\n");
+		final StringBuffer output = new StringBuffer();
+		output.append("Generated x elements:\t");
+		output.append("Computed x elements:\t");
+		output.append("Dist x elements:\t");
+		output.append("Dist abs x elements:\t");
+		output.append("Generated y elements:\t");
+		output.append("Computed y elements:\t");
+		output.append("Dist y elements:\t");
+		output.append("Dist abs y elements:\n");
 
-		final StringBuffer comXElements = new StringBuffer(
-		        "Computed x elements:\t");
-		index = 0;
-		for (final double comXEle : this.comXElements) {
-			comXElements.append(comXEle);
-			if ((index % 10000) == 0) {
-				comXElements.append("\n");
-			} else {
-				comXElements.append("\t");
-			}
-			index++;
-		}
-		comXElements.append("\n");
+		for (int i = 0; i < this.genXElements.size(); i++) {
+			output.append(this.genXElements.get(i)
+			        .setScale(this.precision, BigDecimal.ROUND_HALF_UP)
+			        .toString());
+			output.append("\t");
+			output.append(this.comXElements.get(i)
+			        .setScale(this.precision, BigDecimal.ROUND_HALF_UP)
+			        .toString());
+			output.append("\t");
+			output.append(this.distXElements.get(i)
+			        .setScale(this.precision, BigDecimal.ROUND_HALF_UP)
+			        .toString());
+			output.append("\t");
+			output.append(this.distABSXElements.get(i)
+			        .setScale(this.precision, BigDecimal.ROUND_HALF_UP)
+			        .toString());
+			output.append("\t");
+			output.append(this.genYElements.get(i)
+			        .setScale(this.precision, BigDecimal.ROUND_HALF_UP)
+			        .toString());
+			output.append("\t");
+			output.append(this.comYElements.get(i)
+			        .setScale(this.precision, BigDecimal.ROUND_HALF_UP)
+			        .toString());
+			output.append("\t");
+			output.append(this.distYElements.get(i)
+			        .setScale(this.precision, BigDecimal.ROUND_HALF_UP)
+			        .toString());
+			output.append("\t");
+			output.append(this.distABSYElements.get(i)
+			        .setScale(this.precision, BigDecimal.ROUND_HALF_UP)
+			        .toString());
+			output.append("\t");
 
-		final StringBuffer distXElements = new StringBuffer(
-		        "Dist x elements:\t");
-		index = 0;
-		for (final double distXEle : this.distXElements) {
-			distXElements.append(distXEle);
-			if ((index % 10000) == 0) {
-				distXElements.append("\n");
-			} else {
-				distXElements.append("\t");
+			switch (i) {
+			case 0:
+				output.append("# of gen X elements");
+				output.append("\t");
+				output.append(this.genXElements.size());
+				break;
+			case 1:
+				output.append("# of com X elements");
+				output.append("\t");
+				output.append(this.comXElements.size());
+				break;
+			case 2:
+				output.append("# of dist X elements");
+				output.append("\t");
+				output.append(this.distXElements.size());
+				break;
+			case 3:
+				output.append("# of dist ABS X elements");
+				output.append("\t");
+				output.append(this.distABSXElements.size());
+				break;
+			case 4:
+				output.append("# of gen Y elements");
+				output.append("\t");
+				output.append(this.genYElements.size());
+				break;
+			case 5:
+				output.append("# of com Y elements");
+				output.append("\t");
+				output.append(this.comYElements.size());
+				break;
+			case 6:
+				output.append("# of dist Y elements");
+				output.append("\t");
+				output.append(this.distYElements.size());
+				break;
+			case 7:
+				output.append("# of dist ABS Y elements");
+				output.append("\t");
+				output.append(this.distABSYElements.size());
+				break;
+			case 8:
+				output.append("Bias X:");
+				output.append("\t");
+				output.append(this.biasX);
+				break;
+			case 9:
+				output.append("Bias Y:");
+				output.append("\t");
+				output.append(this.biasY);
+				break;
+			case 10:
+				output.append("Bias ABS X:");
+				output.append("\t");
+				output.append(this.biasABSX);
+				break;
+			case 11:
+				output.append("Bias ABS Y:");
+				output.append("\t");
+				output.append(this.biasABSY);
+				break;
+			case 12:
+				output.append("Sigma X:");
+				output.append("\t");
+				output.append(this.sigmaX);
+				break;
+			case 13:
+				output.append("Sigma Y:");
+				output.append("\t");
+				output.append(this.sigmaY);
+				break;
+			case 14:
+				output.append("Sigma ABS X:");
+				output.append("\t");
+				output.append(this.sigmaABSX);
+				break;
+			case 15:
+				output.append("Sigma ABS Y:");
+				output.append("\t");
+				output.append(this.sigmaABSY);
+				break;
+			default:
+				break;
 			}
-			index++;
+			output.append("\n");
 		}
-		distXElements.append("\n");
 
-		final StringBuffer distABSXElements = new StringBuffer(
-		        "Dist abs x elements:\t");
-		index = 0;
-		for (final double distXEle : this.distABSXElements) {
-			distABSXElements.append(distXEle);
-			if ((index % 10000) == 0) {
-				distABSXElements.append("\n");
-			} else {
-				distABSXElements.append("\t");
-			}
-			index++;
-		}
-		distABSXElements.append("\n");
-
-		final StringBuffer genYElements = new StringBuffer(
-		        "Generated y elements:\t");
-		index = 0;
-		for (final double genYEle : this.genYElements) {
-			genYElements.append(genYEle);
-			if ((index % 10000) == 0) {
-				comXElements.append("\n");
-			} else {
-				comXElements.append("\t");
-			}
-			index++;
-		}
-		genYElements.append("\n");
-
-		final StringBuffer comYElements = new StringBuffer(
-		        "Computed y elements:\t");
-		index = 0;
-		for (final double comYEle : this.comYElements) {
-			comYElements.append(comYEle);
-			if ((index % 10000) == 0) {
-				comYElements.append("\n");
-			} else {
-				comYElements.append("\t");
-			}
-			index++;
-		}
-		comYElements.append("\n");
-
-		final StringBuffer distYElements = new StringBuffer(
-		        "Dist y elements:\t");
-		index = 0;
-		for (final double distYEle : this.distYElements) {
-			distYElements.append(distYEle);
-			if ((index % 10000) == 0) {
-				distYElements.append("\n");
-			} else {
-				distYElements.append("\t");
-			}
-			index++;
-		}
-		distYElements.append("\n");
-
-		final StringBuffer distABSYElements = new StringBuffer(
-		        "Dist y elements:\t");
-		index = 0;
-		for (final double distYEle : this.distABSYElements) {
-			distABSYElements.append(distYEle);
-			if ((index % 10000) == 0) {
-				distABSYElements.append("\n");
-			} else {
-				distABSYElements.append("\t");
-			}
-			index++;
-		}
-		distABSYElements.append("\n");
-
-		bw.write(genXElements.toString());
-		bw.write("# of elements:\t" + this.genXElements.size() + "\n");
-		bw.write(comXElements.toString());
-		bw.write("# of elements:\t" + this.comXElements.size() + "\n");
-		bw.write(distXElements.toString());
-		bw.write("# of elements:\t" + this.distXElements.size() + "\n");
-		bw.write(distABSXElements.toString());
-		bw.write("# of elements:\t" + this.distABSXElements.size() + "\n");
-		bw.write(genYElements.toString());
-		bw.write("# of elements:\t" + this.genYElements.size() + "\n");
-		bw.write(comYElements.toString());
-		bw.write("# of elements:\t" + this.comYElements.size() + "\n");
-		bw.write(distYElements.toString());
-		bw.write("# of elements:\t" + this.distYElements.size() + "\n");
-		bw.write(distABSYElements.toString());
-		bw.write("# of elements:\t" + this.distABSYElements.size() + "\n");
-		bw.write("Bias X:\t" + this.biasX + "\n");
-		bw.write("Bias Y:\t" + this.biasY + "\n");
-		bw.write("Bias ABS X:\t" + this.biasABSX + "\n");
-		bw.write("Bias ABS Y:\t" + this.biasABSY + "\n");
-		bw.write("Sigma X:\t" + this.sigmaX + "\n");
-		bw.write("Sigma Y:\t" + this.sigmaY + "\n");
-		bw.write("Sigma ABS X:\t" + this.sigmaABSX + "\n");
-		bw.write("Sigma ABS Y:\t" + this.sigmaABSY + "\n");
+		bw.write(output.toString());
 		bw.close();
 		fw.close();
 	}
