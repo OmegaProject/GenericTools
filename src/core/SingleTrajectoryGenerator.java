@@ -132,10 +132,8 @@ public class SingleTrajectoryGenerator implements Runnable {
 				}
 			});
 		} catch (final InvocationTargetException ex) {
-			// TODO Auto-generated catch block
 			ex.printStackTrace();
 		} catch (final InterruptedException ex) {
-			// TODO Auto-generated catch block
 			ex.printStackTrace();
 		}
 	}
@@ -150,6 +148,21 @@ public class SingleTrajectoryGenerator implements Runnable {
 			this.log.append("Dataset\t" + dataset.getName() + "\n");
 
 			this.perDatasetReset();
+
+			boolean analyzed = false;
+			for (final File file : dataset.listFiles()) {
+				if (file.getName().equals("STG_Log.txt")) {
+					this.updateGUI("Dataset already analyzed");
+					this.log.append("Dataset already analyzed\n");
+					analyzed = true;
+					break;
+				}
+			}
+
+			if (analyzed) {
+				continue;
+			}
+
 			for (final File image : dataset.listFiles()) {
 				if (image.isFile()) {
 					continue;
@@ -189,9 +202,9 @@ public class SingleTrajectoryGenerator implements Runnable {
 				}
 				try {
 					this.generateSingleTrajectories(logsDir);
+
 					this.writeLogFile(dataset);
 				} catch (final IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -200,7 +213,7 @@ public class SingleTrajectoryGenerator implements Runnable {
 
 	private void writeLogFile(final File dir) throws IOException {
 		final File resultsFile = new File(dir.getAbsolutePath()
-		        + File.separatorChar + "TAF_Log.txt");
+		        + File.separatorChar + "STG_Log.txt");
 		final FileWriter fw = new FileWriter(resultsFile);
 		final BufferedWriter bw = new BufferedWriter(fw);
 		bw.write(this.log.toString() + "\n");

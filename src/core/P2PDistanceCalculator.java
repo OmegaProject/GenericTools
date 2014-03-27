@@ -89,10 +89,8 @@ public class P2PDistanceCalculator implements Runnable {
 				}
 			});
 		} catch (final InvocationTargetException ex) {
-			// TODO Auto-generated catch block
 			ex.printStackTrace();
 		} catch (final InterruptedException ex) {
-			// TODO Auto-generated catch block
 			ex.printStackTrace();
 		}
 	}
@@ -299,7 +297,6 @@ public class P2PDistanceCalculator implements Runnable {
 					this.getPointsFromTrajectories();
 					this.getPointsFromLogs();
 				} catch (final IOException ex) {
-					// TODO Auto-generated catch block
 					ex.printStackTrace();
 					this.updateGUI("Error reading trajectories or logs at image");
 				}
@@ -310,7 +307,6 @@ public class P2PDistanceCalculator implements Runnable {
 				this.writeResultsFile(dataset);
 				this.writeLogFile(dataset);
 			} catch (final IOException ex) {
-				// TODO Auto-generated catch block
 				ex.printStackTrace();
 			}
 		}

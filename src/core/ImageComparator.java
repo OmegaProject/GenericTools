@@ -106,10 +106,8 @@ public class ImageComparator implements Runnable {
 				}
 			});
 		} catch (final InvocationTargetException ex) {
-			// TODO Auto-generated catch block
 			ex.printStackTrace();
 		} catch (final InterruptedException ex) {
-			// TODO Auto-generated catch block
 			ex.printStackTrace();
 		}
 	}

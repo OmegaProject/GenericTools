@@ -13,6 +13,7 @@ import java.util.Map;
 
 import javax.swing.JFileChooser;
 
+import core.DValueCalculator;
 import core.ImageComparator;
 import core.P2PDistanceCalculator;
 import core.PTFilesAnalyzer;
@@ -21,6 +22,24 @@ import core.TrajDataAggregator;
 import core.TrajectoriesAnalyzerAndFilter;
 
 public class OmegaGenericToolGUIListeners {
+
+	public static void addCalculateDOnTrajData(final OmegaGenericToolGUI mainGUI) {
+		mainGUI.getCalculateDOnTrajDataButt().addActionListener(
+		        new ActionListener() {
+			        @Override
+			        public void actionPerformed(final ActionEvent arg0) {
+				        final File workingDir = mainGUI.getWorkingDirectory();
+
+				        final double filter = mainGUI.getTrajFilter();
+
+				        final DValueCalculator dvc = new DValueCalculator(
+				                workingDir, filter, mainGUI);
+				        final Thread t = new Thread(dvc);
+				        t.start();
+			        }
+		        });
+	}
+
 	public static void addAggregateTrajData(final OmegaGenericToolGUI mainGUI) {
 		mainGUI.getAggregateTrajDataButt().addActionListener(
 		        new ActionListener() {
@@ -177,7 +196,6 @@ public class OmegaGenericToolGUIListeners {
 									                        trajsFile, map);
 									        mainGUI.appendSNRResult(mSNRfinder);
 								        } catch (final IOException ex) {
-									        // TODO Auto-generated catch block
 									        ex.printStackTrace();
 								        }
 							        } else {
@@ -230,8 +248,6 @@ public class OmegaGenericToolGUIListeners {
 							        bw.close();
 							        fw.close();
 						        } catch (final IOException e) {
-							        // TODO Auto-generated catch
-							        // block
 							        e.printStackTrace();
 						        }
 					        }
@@ -292,7 +308,7 @@ public class OmegaGenericToolGUIListeners {
 			        public void actionPerformed(final ActionEvent evt) {
 				        final File workingDir = mainGUI.getWorkingDirectory();
 
-				        final int filter = mainGUI.getTrajFilter();
+				        final double filter = mainGUI.getTrajFilter();
 				        final boolean analysisOnly = mainGUI.isAnalyzeOnly();
 				        final boolean mergeTraj = mainGUI.isMergeTraj();
 				        final boolean analyzeFilteredTraj = mainGUI

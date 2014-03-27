@@ -45,6 +45,7 @@ public class OmegaGenericToolGUI {
 	private JFileChooser compareDirDialog_fCh;
 	private JLabel compareCurrentDirLbl;
 
+	private JButton calculateDOnTrajData_btt;
 	private JButton aggregateTrajData_btt;
 
 	private JTextField filterTrajLenght_txt;
@@ -190,7 +191,8 @@ public class OmegaGenericToolGUI {
 		this.compareWithDistr_btt = new JButton("Compare images with distr");
 		panel.add(this.compareWithDistr_btt);
 
-		panel.add(new JLabel());
+		this.calculateDOnTrajData_btt = new JButton("Calculate D traj data");
+		panel.add(this.calculateDOnTrajData_btt);
 
 		this.aggregateTrajData_btt = new JButton("Aggregate traj data");
 		panel.add(this.aggregateTrajData_btt);
@@ -285,6 +287,7 @@ public class OmegaGenericToolGUI {
 		OmegaGenericToolGUIListeners.addCompareImages(this);
 		OmegaGenericToolGUIListeners.addCompareImagesWithDistr(this);
 
+		OmegaGenericToolGUIListeners.addCalculateDOnTrajData(this);
 		OmegaGenericToolGUIListeners.addAggregateTrajData(this);
 
 		OmegaGenericToolGUIListeners.addAnalyzeAndFilterTrajectories(this);
@@ -318,6 +321,10 @@ public class OmegaGenericToolGUI {
 		return this.compareWithDistr_btt;
 	}
 
+	public JButton getCalculateDOnTrajDataButt() {
+		return this.calculateDOnTrajData_btt;
+	}
+
 	public JButton getAggregateTrajDataButt() {
 		return this.aggregateTrajData_btt;
 	}
@@ -346,8 +353,8 @@ public class OmegaGenericToolGUI {
 		return this.analyzeImageLog_chkb.isSelected();
 	}
 
-	public int getTrajFilter() {
-		return Integer.valueOf(this.filterTrajLenght_txt.getText());
+	public double getTrajFilter() {
+		return Double.valueOf(this.filterTrajLenght_txt.getText());
 	}
 
 	/**

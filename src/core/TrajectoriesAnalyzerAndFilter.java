@@ -34,7 +34,7 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 
 	private final boolean onlyAnalysis, analyzeFiltered, analyzeMerged;
 	private final boolean mergeTrajectories;
-	private final int filterTrajLenght;
+	private final double filterTrajLenght;
 
 	private final Map<Integer, List<String>> trajectories;
 	private final Map<Integer, List<String>> filterTrajectories;
@@ -61,7 +61,7 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 	private int minTrajLenght;
 
 	public TrajectoriesAnalyzerAndFilter(final File workingDir,
-	        final Integer minTrajLenght, final boolean onlyAnalysis,
+	        final double filter, final boolean onlyAnalysis,
 	        final boolean mergeTrajectories, final boolean analyzeFiltered,
 	        final boolean analyzeMerged, final OmegaGenericToolGUI gui) {
 		this.workingDir = workingDir;
@@ -75,7 +75,7 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 		this.analyzeFiltered = analyzeFiltered;
 		this.analyzeMerged = analyzeMerged;
 		this.mergeTrajectories = mergeTrajectories;
-		this.filterTrajLenght = minTrajLenght;
+		this.filterTrajLenght = filter;
 		this.log = new StringBuffer();
 		this.gui = gui;
 
@@ -108,10 +108,8 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 				}
 			});
 		} catch (final InvocationTargetException ex) {
-			// TODO Auto-generated catch block
 			ex.printStackTrace();
 		} catch (final InterruptedException ex) {
-			// TODO Auto-generated catch block
 			ex.printStackTrace();
 		}
 	}
@@ -179,7 +177,6 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 				try {
 					this.getTrajectoriesFromFile();
 				} catch (final IOException ex) {
-					// TODO Auto-generated catch block
 					ex.printStackTrace();
 					this.updateGUI("Error reading trajectories at image");
 				}
@@ -194,7 +191,6 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 					try {
 						this.writeFilteredTrajectoriesToFile(logsDir);
 					} catch (final IOException ex) {
-						// TODO Auto-generated catch block
 						ex.printStackTrace();
 					}
 				}
@@ -205,7 +201,6 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 				this.writeTrajectoriesAnalysisToFile(dataset);
 				this.writeLogFile(dataset);
 			} catch (final IOException ex) {
-				// TODO Auto-generated catch block
 				ex.printStackTrace();
 			}
 		}

@@ -9,6 +9,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -44,7 +45,9 @@ public class TrajDataAggregator implements Runnable {
 		final List<File> trajFiles = new ArrayList<File>();
 		final List<File> noisyTrajFiles = new ArrayList<File>();
 		final File resultsFile = new File(this.workingDir.getPath()
-		        + "\\aggregateData.txt");
+		        + "\\TrajectoriesAggregateData.txt");
+		final File resultsDiffFile = new File(this.workingDir.getPath()
+		        + "\\TrajectoriesNoiseData.txt");
 
 		int totalFiles = 0;
 		for (final File trajFile : this.workingDir.listFiles()) {
@@ -79,9 +82,8 @@ public class TrajDataAggregator implements Runnable {
 		try {
 
 			this.aggregateTrajData(trajFiles.toArray(),
-			        noisyTrajFiles.toArray(), resultsFile);
+			        noisyTrajFiles.toArray(), resultsFile, resultsDiffFile);
 		} catch (final IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		this.updateGUI("Trajectories aggregated");
@@ -98,20 +100,19 @@ public class TrajDataAggregator implements Runnable {
 				}
 			});
 		} catch (final InvocationTargetException ex) {
-			// TODO Auto-generated catch block
 			ex.printStackTrace();
 		} catch (final InterruptedException ex) {
-			// TODO Auto-generated catch block
 			ex.printStackTrace();
 		}
 	}
 
 	public void aggregateTrajData(final Object[] objects,
-	        final Object[] objects2, final File resultsFile) throws IOException {
+	        final Object[] objects2, final File resultsFile,
+	        final File resultsDiffFile) throws IOException {
 		for (int i = 0; i < objects.length; i++) {
 			this.aggregateTrajData(i, objects[i], objects2[i]);
 		}
-		this.appendResultsToFile(resultsFile);
+		this.appendResultsToFile(resultsFile, resultsDiffFile);
 	}
 
 	private void aggregateTrajData(final int index, final Object object1,
@@ -177,10 +178,14 @@ public class TrajDataAggregator implements Runnable {
 		fr2.close();
 	}
 
-	public void appendResultsToFile(final File file) throws IOException {
-		final FileWriter fw = new FileWriter(file, true);
-		final BufferedWriter bw = new BufferedWriter(fw);
-		bw.write("X\tY\tX N\tY N\n");
+	public void appendResultsToFile(final File aggregateFile,
+	        final File diffFile) throws IOException {
+		final FileWriter fw1 = new FileWriter(aggregateFile, true);
+		final BufferedWriter bw1 = new BufferedWriter(fw1);
+		final FileWriter fw2 = new FileWriter(diffFile, true);
+		final BufferedWriter bw2 = new BufferedWriter(fw2);
+		bw1.write("X\tY\tX N\tY N\n");
+		bw2.write("Noise_X\tNoise_Y\n");
 		for (int i = 0; i < this.xCoords.size(); i++) {
 			final List<Double> xCoord = this.xCoords.get(i);
 			final List<Double> yCoord = this.yCoords.get(i);
@@ -189,11 +194,20 @@ public class TrajDataAggregator implements Runnable {
 
 			for (int k = 0; k < xCoord.size(); k++) {
 
-				bw.write(xCoord.get(k) + "\t" + yCoord.get(k) + "\t"
+				bw1.write(xCoord.get(k) + "\t" + yCoord.get(k) + "\t"
 				        + xNoiseCoord.get(k) + "\t" + yNoiseCoord.get(k) + "\n");
+				final Double xDiff = xNoiseCoord.get(k) - xCoord.get(k);
+				final Double yDiff = yNoiseCoord.get(k) - yCoord.get(k);
+				final BigDecimal xDiffBG = new BigDecimal(xDiff).setScale(6,
+				        BigDecimal.ROUND_HALF_UP);
+				final BigDecimal yDiffBG = new BigDecimal(yDiff).setScale(6,
+				        BigDecimal.ROUND_HALF_UP);
+				bw2.write(xDiffBG.toString() + "\t" + yDiffBG.toString() + "\n");
 			}
 		}
-		bw.close();
-		fw.close();
+		bw1.close();
+		fw1.close();
+		bw2.close();
+		fw2.close();
 	}
 }

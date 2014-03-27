@@ -1,4 +1,5 @@
 package core;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -20,27 +21,26 @@ public class FrameParticlesCounter {
 	private int numberOfFrames;
 
 	public FrameParticlesCounter(final File file) {
-		f = file;
-		totalParticles = 0;
-		numberOfFrames = 0;
+		this.f = file;
+		this.totalParticles = 0;
+		this.numberOfFrames = 0;
 
 		try {
-			countParticles();
+			this.countParticles();
 		} catch (final IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 
 	public void countParticles() throws IOException {
 		String line;
-		final FileReader fr = new FileReader(f);
+		final FileReader fr = new FileReader(this.f);
 		final BufferedReader br = new BufferedReader(fr);
 
 		line = br.readLine();
 		while (line != null) {
 			if (line.startsWith("Frame")) {
-				numberOfFrames++;
+				this.numberOfFrames++;
 				final int beginSubIndex = line.indexOf("Particles");
 				final int endSubIndex = line.indexOf("PS");
 				String subString = line.substring(beginSubIndex, endSubIndex);
@@ -48,7 +48,7 @@ public class FrameParticlesCounter {
 				subString = subString.replace("\t", "");
 				subString = subString.replaceFirst("/\\d++", "");
 				final int particles = Integer.parseInt(subString);
-				totalParticles += particles;
+				this.totalParticles += particles;
 			}
 			line = br.readLine();
 		}
@@ -58,15 +58,15 @@ public class FrameParticlesCounter {
 	}
 
 	public int getNumberOfFrames() {
-		return numberOfFrames;
+		return this.numberOfFrames;
 	}
 
 	public int getTotalParticles() {
-		return totalParticles;
+		return this.totalParticles;
 	}
 
 	public double getMeanNumberOfParticlePerFrame() {
-		return totalParticles / numberOfFrames;
+		return this.totalParticles / this.numberOfFrames;
 	}
 
 	public static void main(final String[] args) {
@@ -88,29 +88,31 @@ public class FrameParticlesCounter {
 			System.out.println("###" + dir.getName() + "###");
 			double meanParticles = 0;
 			int fileCounter = 0;
-			if (!dir.isDirectory() || !dir.getName().contains(dirRegex))
+			if (!dir.isDirectory() || !dir.getName().contains(dirRegex)) {
 				continue;
+			}
 			final String specificName = dir.getName().replace(dirRegex, "");
 			final File[] files = dir.listFiles();
 			for (final File f : files) {
-				if (!f.getName().contains(fileRegex))
+				if (!f.getName().contains(fileRegex)) {
 					continue;
+				}
 				fileCounter++;
 				final FrameParticlesCounter particleCounter = new FrameParticlesCounter(
-						f);
+				        f);
 				// System.out.println("File: " + f.getName() + " frames: "
 				// + particleCounter.getNumberOfFrames()
 				// + " meanParticles: "
 				// + particleCounter.getMeanNumberOfParticlePerFrame());
 				meanParticles += particleCounter
-						.getMeanNumberOfParticlePerFrame();
+				        .getMeanNumberOfParticlePerFrame();
 				System.out.println("###" + f.getName() + "particles: "
-						+ particleCounter.getMeanNumberOfParticlePerFrame()
-						+ "###");
+				        + particleCounter.getMeanNumberOfParticlePerFrame()
+				        + "###");
 			}
 			meanParticles /= fileCounter;
 			System.out.println(dir.getName() + " specificName : "
-					+ specificName + " particles: " + meanParticles);
+			        + specificName + " particles: " + meanParticles);
 		}
 	}
 }
