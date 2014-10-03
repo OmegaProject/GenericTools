@@ -13,6 +13,8 @@ import java.util.Map;
 
 import javax.swing.JFileChooser;
 
+import core.DAndSMSSDataAggregator;
+import core.DAndSMSSMeansCalculator;
 import core.DValueCalculator;
 import core.ImageComparator;
 import core.P2PDistanceCalculator;
@@ -321,6 +323,39 @@ public class OmegaGenericToolGUIListeners {
 				                analyzeFilteredTraj, analyzeMergedTraj, mainGUI);
 
 				        final Thread t = new Thread(TAF);
+				        t.start();
+			        }
+		        });
+	}
+
+	public static void addComputeSMSSAndDMeans(final OmegaGenericToolGUI mainGUI) {
+		mainGUI.getComputeSMSSAndDMeansButt().addActionListener(
+		        new ActionListener() {
+			        @Override
+			        public void actionPerformed(final ActionEvent evt) {
+				        final File workingDir = mainGUI.getWorkingDirectory();
+
+				        final DAndSMSSMeansCalculator da = new DAndSMSSMeansCalculator(
+				                workingDir, mainGUI);
+
+				        final Thread t = new Thread(da);
+				        t.start();
+			        }
+		        });
+	}
+
+	public static void addAggregateSMSSAndDData(
+	        final OmegaGenericToolGUI mainGUI) {
+		mainGUI.getAggregateSMSSAndDDataButt().addActionListener(
+		        new ActionListener() {
+			        @Override
+			        public void actionPerformed(final ActionEvent evt) {
+				        final File workingDir = mainGUI.getWorkingDirectory();
+
+				        final DAndSMSSDataAggregator da = new DAndSMSSDataAggregator(
+				                workingDir, mainGUI);
+
+				        final Thread t = new Thread(da);
 				        t.start();
 			        }
 		        });

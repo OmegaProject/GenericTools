@@ -54,6 +54,9 @@ public class OmegaGenericToolGUI {
 	        analyzeImageLog_chkb;
 	private JButton analyzeAndFilterTraj_btt;
 
+	private JButton computeSMSSAndDMeans_btt;
+	private JButton aggregateSMSSAndD_btt;
+
 	/**
 	 * Create the main frame and invoke all the needed methods
 	 * 
@@ -103,6 +106,7 @@ public class OmegaGenericToolGUI {
 		final JPanel comparePanel = this.createComparePanel();
 		final JPanel buttonPanel1 = this.createButtonPanel1();
 		final JPanel buttonPanel2 = this.createButtonPanel2();
+		final JPanel buttonPanel3 = this.createButtonPanel3();
 		final JPanel optionsTrajPanel = this.createOptionsTrajPanel();
 		final JPanel filterTrajPanel = this.createTrajFilterPanel();
 
@@ -122,7 +126,8 @@ public class OmegaGenericToolGUI {
 
 		mainPanel.add(topPanel, BorderLayout.NORTH);
 		mainPanel.add(buttonPanel1, BorderLayout.WEST);
-		mainPanel.add(buttonPanel2, BorderLayout.EAST);
+		mainPanel.add(buttonPanel2, BorderLayout.CENTER);
+		mainPanel.add(buttonPanel3, BorderLayout.EAST);
 		mainPanel.add(filterTrajPanel, BorderLayout.SOUTH);
 
 		cont.add(mainPanel, BorderLayout.NORTH);
@@ -196,6 +201,19 @@ public class OmegaGenericToolGUI {
 
 		this.aggregateTrajData_btt = new JButton("Aggregate traj data");
 		panel.add(this.aggregateTrajData_btt);
+
+		return panel;
+	}
+
+	public JPanel createButtonPanel3() {
+		final JPanel panel = new JPanel();
+		panel.setLayout(new GridLayout(4, 1));
+
+		this.computeSMSSAndDMeans_btt = new JButton("Compute SMSS and D means");
+		panel.add(this.computeSMSSAndDMeans_btt);
+
+		this.aggregateSMSSAndD_btt = new JButton("Aggregate SMSS and D data");
+		panel.add(this.aggregateSMSSAndD_btt);
 
 		return panel;
 	}
@@ -291,10 +309,21 @@ public class OmegaGenericToolGUI {
 		OmegaGenericToolGUIListeners.addAggregateTrajData(this);
 
 		OmegaGenericToolGUIListeners.addAnalyzeAndFilterTrajectories(this);
+
+		OmegaGenericToolGUIListeners.addComputeSMSSAndDMeans(this);
+		OmegaGenericToolGUIListeners.addAggregateSMSSAndDData(this);
 	}
 
 	private void setDefaultValues() {
 
+	}
+
+	public JButton getAggregateSMSSAndDDataButt() {
+		return this.aggregateSMSSAndD_btt;
+	}
+
+	public JButton getComputeSMSSAndDMeansButt() {
+		return this.computeSMSSAndDMeans_btt;
 	}
 
 	public JButton getGenerateSingleTrajFilesButt() {
