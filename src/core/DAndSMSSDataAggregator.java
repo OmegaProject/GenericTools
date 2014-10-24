@@ -18,6 +18,7 @@ import javax.swing.SwingUtilities;
 
 public class DAndSMSSDataAggregator implements Runnable {
 
+	private static int LD = 10;
 	private static boolean BROWNIAN_MODE = false;
 
 	public final static String fileName1 = "D_values_";
@@ -324,6 +325,8 @@ public class DAndSMSSDataAggregator implements Runnable {
 
 							bw.write(String.valueOf(rowCounter));
 							bw.write("\t");
+							bw.write(String.valueOf(DAndSMSSDataAggregator.LD));
+							bw.write("\t");
 							bw.write(String.valueOf(inputSMSS));
 							bw.write("\t");
 							bw.write(String.valueOf(inputL));
@@ -366,6 +369,8 @@ public class DAndSMSSDataAggregator implements Runnable {
 					final Double outputD = dValues.get(i);
 
 					bw.write(String.valueOf(rowCounter));
+					bw.write("\t");
+					bw.write(String.valueOf(DAndSMSSDataAggregator.LD));
 					bw.write("\t");
 					bw.write(String.valueOf(inputSMSS));
 					bw.write("\t");
