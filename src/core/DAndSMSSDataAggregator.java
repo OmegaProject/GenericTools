@@ -19,7 +19,20 @@ import javax.swing.SwingUtilities;
 public class DAndSMSSDataAggregator implements Runnable {
 
 	private static int LD = 10;
-	private static boolean BROWNIAN_MODE = false;
+	private static boolean OMEGA_RESULTS = false;
+	private static boolean BROWNIAN_MODE = true;
+
+	public static String GET_ALGO_TYPE() {
+		if (DAndSMSSDataAggregator.OMEGA_RESULTS)
+			return "omega";
+		return "getMss";
+	}
+
+	public static String GET_TRAJ_TYPE() {
+		if (DAndSMSSDataAggregator.BROWNIAN_MODE)
+			return "brownian";
+		return "artificial";
+	}
 
 	public final static String fileName1 = "D_values_";
 	public final static String fileName2 = "SMSS_values_";
@@ -207,39 +220,20 @@ public class DAndSMSSDataAggregator implements Runnable {
 			}
 			this.updateGUI("Set\t" + set.getName());
 			this.errorLog.append("Set\t" + set.getName() + "\n");
-			for (final File file : set.listFiles()) {
-				if (!file.isFile()) {
-					continue;
-				}
-				if (file.getName().startsWith(DAndSMSSDataAggregator.fileName2)) {
-					this.updateGUI("File\t" + file.getName());
-					this.errorLog.append("File\t" + file.getName() + "\n");
-
-					try {
-						if (!DAndSMSSDataAggregator.BROWNIAN_MODE) {
-							this.importValuesFull(file);
-						} else {
-							this.importValues(file);
-						}
-					} catch (final Exception e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
-			}
-		}
-
-		for (final File set : this.workingDir.listFiles()) {
-			if (set.isFile()) {
+			if (DAndSMSSDataAggregator.OMEGA_RESULTS
+			        && !set.getName().contains("omega")) {
+				continue;
+			} else if (!DAndSMSSDataAggregator.OMEGA_RESULTS
+			        && set.getName().contains("omega")) {
 				continue;
 			}
-			this.updateGUI("Set\t" + set.getName());
-			this.errorLog.append("Set\t" + set.getName() + "\n");
 			for (final File file : set.listFiles()) {
 				if (!file.isFile()) {
 					continue;
 				}
-				if (file.getName().startsWith(DAndSMSSDataAggregator.fileName1)) {
+				if (file.getName().startsWith(DAndSMSSDataAggregator.fileName2)
+				        || file.getName().startsWith(
+				                DAndSMSSDataAggregator.fileName1)) {
 					this.updateGUI("File\t" + file.getName());
 					this.errorLog.append("File\t" + file.getName() + "\n");
 
@@ -283,7 +277,11 @@ public class DAndSMSSDataAggregator implements Runnable {
 	}
 
 	private void writeLogFile(final File dir) throws IOException {
-		final String fileName = DAndSMSSDataAggregator.logFileName + ".txt";
+		String fileName = DAndSMSSDataAggregator.logFileName;
+		if (DAndSMSSDataAggregator.OMEGA_RESULTS) {
+			fileName += "_omega";
+		}
+		fileName += ".txt";
 		final File resultsFile = new File(dir.getAbsolutePath()
 		        + File.separatorChar + fileName);
 		final FileWriter fw = new FileWriter(resultsFile);
@@ -294,7 +292,11 @@ public class DAndSMSSDataAggregator implements Runnable {
 	}
 
 	private void writeAggregatedValuesFull(final File dir) throws IOException {
-		final String fileName = DAndSMSSDataAggregator.resultsFileName + ".txt";
+		String fileName = DAndSMSSDataAggregator.resultsFileName;
+		if (DAndSMSSDataAggregator.OMEGA_RESULTS) {
+			fileName += "_omega";
+		}
+		fileName += ".txt";
 		final File resultsFile = new File(dir.getAbsolutePath()
 		        + File.separatorChar + fileName);
 		final FileWriter fw = new FileWriter(resultsFile, true);
@@ -336,6 +338,10 @@ public class DAndSMSSDataAggregator implements Runnable {
 							bw.write(String.valueOf(outputSMSS));
 							bw.write("\t\t\t\t");
 							bw.write(String.valueOf(outputD));
+							bw.write("\t\t\t\t");
+							bw.write(DAndSMSSDataAggregator.GET_ALGO_TYPE());
+							bw.write("\t");
+							bw.write(DAndSMSSDataAggregator.GET_TRAJ_TYPE());
 							bw.write("\n");
 							rowCounter++;
 						}
@@ -348,7 +354,11 @@ public class DAndSMSSDataAggregator implements Runnable {
 	}
 
 	private void writeAggregatedValues(final File dir) throws IOException {
-		final String fileName = DAndSMSSDataAggregator.resultsFileName + ".txt";
+		String fileName = DAndSMSSDataAggregator.resultsFileName;
+		if (DAndSMSSDataAggregator.OMEGA_RESULTS) {
+			fileName += "_omega";
+		}
+		fileName += ".txt";
 		final File resultsFile = new File(dir.getAbsolutePath()
 		        + File.separatorChar + fileName);
 		final FileWriter fw = new FileWriter(resultsFile, true);
@@ -381,6 +391,10 @@ public class DAndSMSSDataAggregator implements Runnable {
 					bw.write(String.valueOf(outputSMSS));
 					bw.write("\t\t\t\t");
 					bw.write(String.valueOf(outputD));
+					bw.write("\t\t\t\t");
+					bw.write(DAndSMSSDataAggregator.GET_ALGO_TYPE());
+					bw.write("\t");
+					bw.write(DAndSMSSDataAggregator.GET_TRAJ_TYPE());
 					bw.write("\n");
 					rowCounter++;
 				}
