@@ -51,15 +51,18 @@ public class OmegaGenericToolGUI {
 	private JTextField filterTrajLenght_txt;
 	private JCheckBox analyzeOnlyTraj_chkb, mergeTraj_chkb;
 	private JCheckBox analyzeFilteredTraj_chkb, analyzeMergedTraj_chkb,
-	        analyzeImageLog_chkb;
+			analyzeImageLog_chkb, analyzeSingleImage_chkb;
 	private JButton analyzeAndFilterTraj_btt;
 
 	private JButton computeSMSSAndDMeans_btt;
 	private JButton aggregateSMSSAndD_btt;
+	private JButton consolidateSMSSAndD_btt;
+	
+	private JButton runMosaicPD_btt;
 
 	/**
 	 * Create the main frame and invoke all the needed methods
-	 * 
+	 *
 	 * @since 0.0
 	 */
 	private void createAndShowGUI() {
@@ -73,14 +76,14 @@ public class OmegaGenericToolGUI {
 		this.workingDirDialog_fCh.setDialogTitle("Working directory chooser");
 		this.workingDirDialog_fCh.setMultiSelectionEnabled(false);
 		this.workingDirDialog_fCh
-		        .setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 
 		this.compareDirDialog_fCh = new JFileChooser();
 		this.compareDirDialog_fCh.setCurrentDirectory(new File(s));
 		this.compareDirDialog_fCh.setDialogTitle("Compare directory chooser");
 		this.compareDirDialog_fCh.setMultiSelectionEnabled(false);
 		this.compareDirDialog_fCh
-		        .setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 
 		this.addWidgets();
 
@@ -95,7 +98,7 @@ public class OmegaGenericToolGUI {
 
 	/**
 	 * Create all the needed panels and invoke the relative methods
-	 * 
+	 *
 	 * @since 0.0
 	 */
 	private void addWidgets() {
@@ -142,7 +145,7 @@ public class OmegaGenericToolGUI {
 
 		panel.add(new JLabel("Actual working folder:"));
 		final String workingFolder = this.workingDirDialog_fCh
-		        .getCurrentDirectory().getPath();
+				.getCurrentDirectory().getPath();
 		this.workingCurrentDirLbl = new JLabel(workingFolder);
 		panel.add(this.workingCurrentDirLbl);
 		this.workingDirChooser_btt = new JButton("Choose the working directory");
@@ -156,7 +159,7 @@ public class OmegaGenericToolGUI {
 		panel.setLayout(new GridLayout(4, 1));
 
 		this.generateSingleTrajFiles_btt = new JButton(
-		        "Generate single traj files");
+				"Generate single traj files");
 		panel.add(this.generateSingleTrajFiles_btt);
 
 		this.computeSNRData_btt = new JButton("Compute SNR data");
@@ -177,7 +180,7 @@ public class OmegaGenericToolGUI {
 
 		panel.add(new JLabel("Actual compare folder:"));
 		final String compareFolder = this.compareDirDialog_fCh
-		        .getCurrentDirectory().getPath();
+				.getCurrentDirectory().getPath();
 		this.compareCurrentDirLbl = new JLabel(compareFolder);
 		panel.add(this.compareCurrentDirLbl);
 		this.compareDirChooser_btt = new JButton("Choose the compare directory");
@@ -214,6 +217,13 @@ public class OmegaGenericToolGUI {
 
 		this.aggregateSMSSAndD_btt = new JButton("Aggregate SMSS and D data");
 		panel.add(this.aggregateSMSSAndD_btt);
+
+		this.consolidateSMSSAndD_btt = new JButton(
+				"Consolidate SMSS and D files");
+		panel.add(this.consolidateSMSSAndD_btt);
+		
+		this.runMosaicPD_btt = new JButton("Run MOSAIC PD");
+		panel.add(this.runMosaicPD_btt);
 
 		return panel;
 	}
@@ -253,15 +263,18 @@ public class OmegaGenericToolGUI {
 
 		this.analyzeImageLog_chkb = new JCheckBox("Analyze image log");
 		panel.add(this.analyzeImageLog_chkb);
+		
+		this.analyzeSingleImage_chkb = new JCheckBox("Analyze single image");
+		panel.add(this.analyzeSingleImage_chkb);
 
 		return panel;
 	}
 
 	/**
 	 * Create the results panel
-	 * 
+	 *
 	 * @return
-	 * 
+	 *
 	 * @since 0.2
 	 */
 	private JPanel generateResultsPanel() {
@@ -290,7 +303,7 @@ public class OmegaGenericToolGUI {
 
 	/**
 	 * Add all the needed listeners
-	 * 
+	 *
 	 * @since 0.0
 	 */
 	private void addListeners() {
@@ -312,12 +325,23 @@ public class OmegaGenericToolGUI {
 
 		OmegaGenericToolGUIListeners.addComputeSMSSAndDMeans(this);
 		OmegaGenericToolGUIListeners.addAggregateSMSSAndDData(this);
+		OmegaGenericToolGUIListeners.addConsolidateSMSSAndDFiles(this);
+
+		OmegaGenericToolGUIListeners.addRunMosaicPD(this);
 	}
 
 	private void setDefaultValues() {
 
 	}
 
+	public JButton getRunMosaicPDButt() {
+		return this.runMosaicPD_btt;
+	}
+
+	public JButton getConsolidateSMSSAndDFilesButt() {
+		return this.consolidateSMSSAndD_btt;
+	}
+	
 	public JButton getAggregateSMSSAndDDataButt() {
 		return this.aggregateSMSSAndD_btt;
 	}
@@ -382,6 +406,10 @@ public class OmegaGenericToolGUI {
 		return this.analyzeImageLog_chkb.isSelected();
 	}
 
+	public boolean isPDRunningSingleImage() {
+		return this.analyzeSingleImage_chkb.isSelected();
+	}
+
 	public double getTrajFilter() {
 		return Double.valueOf(this.filterTrajLenght_txt.getText());
 	}
@@ -389,16 +417,16 @@ public class OmegaGenericToolGUI {
 	/**
 	 * Return the given results string to the results text area. A newline is
 	 * inserted after each results string
-	 * 
+	 *
 	 * @return
-	 * 
+	 *
 	 * @since 0.2
 	 */
 	public void appendResultsText(final String results) {
 		this.results_txtA.append(results);
 		this.results_txtA.append("\n");
 		this.results_txtA.setCaretPosition(this.results_txtA.getDocument()
-		        .getLength());
+				.getLength());
 	}
 
 	public File getWorkingDirectory() {
@@ -450,7 +478,7 @@ public class OmegaGenericToolGUI {
 		this.appendResultsText("SNR_B_G_M: " + mSNRfinder.getMeanSNR_B_G_M());
 		this.appendResultsText("Particles: " + mSNRfinder.getTotalParticles());
 		this.appendResultsText("Particles Per Frame: "
-		        + mSNRfinder.getMeanParticlePerFrame());
+				+ mSNRfinder.getMeanParticlePerFrame());
 		this.appendResultsText("Mean size: " + mSNRfinder.getMeanParticleSize());
 		this.appendResultsText("#######################");
 	}
@@ -459,6 +487,6 @@ public class OmegaGenericToolGUI {
 		this.results_txtA.append(output);
 		this.results_txtA.append("\n");
 		this.results_txtA.setCaretPosition(this.results_txtA.getDocument()
-		        .getLength());
+				.getLength());
 	}
 }

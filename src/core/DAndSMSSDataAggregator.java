@@ -18,9 +18,9 @@ import javax.swing.SwingUtilities;
 
 public class DAndSMSSDataAggregator implements Runnable {
 
-	private static int LD = 10;
-	private static boolean OMEGA_RESULTS = false;
-	private static boolean BROWNIAN_MODE = true;
+	private static int LD = 3;
+	private static boolean OMEGA_RESULTS = true;
+	private static boolean BROWNIAN_MODE = false;
 
 	public static String GET_ALGO_TYPE() {
 		if (DAndSMSSDataAggregator.OMEGA_RESULTS)
