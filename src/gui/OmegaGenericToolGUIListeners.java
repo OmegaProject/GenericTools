@@ -20,12 +20,11 @@ import core.DValueCalculator;
 import core.ImageComparator;
 import core.P2PDistanceCalculator;
 import core.PTFilesAnalyzer;
+import core.SDBatchRunnerSingleFolder;
 import core.SDBatchRunnerSingleImage;
-import core.SDSLBatchRunnerSingleFolder;
 import core.SingleTrajectoryGenerator;
 import core.TrajDataAggregator;
 import core.TrajectoriesAnalyzerAndFilter;
-import edu.umassmed.omega.plSbalzariniPlugin.PLConstants;
 
 public class OmegaGenericToolGUIListeners {
 	
@@ -93,6 +92,25 @@ public class OmegaGenericToolGUIListeners {
 									.getSelectedFile().getPath());
 						} else {
 							mainGUI.setNewCompareCurrentDirLbl(fc
+									.getCurrentDirectory().getPath());
+						}
+					}
+				});
+	}
+	
+	public static void addOutputDirChooser(final OmegaGenericToolGUI mainGUI) {
+		mainGUI.getOutputDirChooserButton().addActionListener(
+				new ActionListener() {
+					@Override
+					public void actionPerformed(final ActionEvent arg0) {
+						final JFileChooser fc = mainGUI
+								.getOutputDirChooserDialog();
+						fc.showOpenDialog(fc);
+						if (fc.getSelectedFile() != null) {
+							mainGUI.setNewOutputCurrentDirLbl(fc
+									.getSelectedFile().getPath());
+						} else {
+							mainGUI.setNewOutputCurrentDirLbl(fc
 									.getCurrentDirectory().getPath());
 						}
 					}
@@ -267,14 +285,15 @@ public class OmegaGenericToolGUIListeners {
 				new ActionListener() {
 					@Override
 					public void actionPerformed(final ActionEvent evt) {
-						final File workingDir = mainGUI.getWorkingDirectory();
+						final File inputDir = mainGUI.getWorkingDirectory();
+						final File outputDir = mainGUI.getOutputDirectory();
 						final boolean analyzeFilteredTraj = mainGUI
 								.isAnalyzeFilteredTraj();
 						final boolean analyzeMergedTraj = mainGUI
 								.isAnalyzeMergedTraj();
 						
 						final P2PDistanceCalculator calc = new P2PDistanceCalculator(
-								workingDir, analyzeFilteredTraj,
+								inputDir, outputDir, analyzeFilteredTraj,
 								analyzeMergedTraj, mainGUI);
 						
 						final Thread t = new Thread(calc);
@@ -386,41 +405,42 @@ public class OmegaGenericToolGUIListeners {
 		mainGUI.getRunMosaicPDButt().addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(final ActionEvent evt) {
-				final File workingDir = mainGUI.getWorkingDirectory();
+				final File inputDir = mainGUI.getWorkingDirectory();
+				final File outputDir = mainGUI.getOutputDirectory();
 				
 				final boolean isRunningSingleImage = mainGUI
 						.isPDRunningSingleImage();
 				
 				final Integer radius = 3;
-				final Double cutoff = 0.35;
-				final Float percentile = (float) 1.55 / 100;
-				final Float threshold = (float) 1.55;
+				final Double cutoff = 0.001;
+				final Float percentile = (float) 0.500 / 100;
+				final Float threshold = (float) 0.500;
 				final Boolean percAbs = false;
 				final Integer z = 0, c = 0;
-				final Float displacement = 3f;
-				final Integer linkrange = 5;
-				final String movType = PLConstants.PARAM_MOVTYPE_BROWNIAN;
-				final Float objectFeature = 1f;
-				final Float dynamics = 1f;
-				final String optimizer = PLConstants.PARAM_OPTIMIZER_GREEDY;
-				final Integer minLength = 0;
+				// final Float displacement = 3f;
+				// final Integer linkrange = 5;
+				// final String movType = PLConstants.PARAM_MOVTYPE_BROWNIAN;
+				// final Float objectFeature = 1f;
+				// final Float dynamics = 1f;
+				// final String optimizer = PLConstants.PARAM_OPTIMIZER_GREEDY;
+				// final Integer minLength = 0;
 				
 				if (isRunningSingleImage) {
 					final SDBatchRunnerSingleImage runner = new SDBatchRunnerSingleImage(
-							mainGUI, workingDir, radius, cutoff, percentile,
-							threshold, percAbs, c, z);
+							mainGUI, inputDir, outputDir, radius, cutoff,
+							percentile, threshold, percAbs, c, z);
 					final Thread t = new Thread(runner);
 					t.start();
 				} else {
-					// final SDBatchRunnerSingleFolder runner = new
-					// SDBatchRunnerSingleFolder(
-					// mainGUI, workingDir, radius, cutoff, percentile,
-					// threshold, percAbs, c, z);
-					final SDSLBatchRunnerSingleFolder runner = new SDSLBatchRunnerSingleFolder(
-							mainGUI, workingDir, radius, cutoff, percentile,
-							threshold, percAbs, c, z, displacement, linkrange,
-							movType, objectFeature, dynamics, optimizer,
-							minLength);
+					final SDBatchRunnerSingleFolder runner = new SDBatchRunnerSingleFolder(
+							mainGUI, inputDir, outputDir, radius, cutoff,
+							percentile, threshold, percAbs, c, z);
+					// final SDSLBatchRunnerSingleFolder runner = new
+					// SDSLBatchRunnerSingleFolder(
+					// mainGUI, inputDir, outputDir, radius, cutoff, percentile,
+					// threshold, percAbs, c, z, displacement, linkrange,
+					// movType, objectFeature, dynamics, optimizer,
+					// minLength);
 					final Thread t = new Thread(runner);
 					t.start();
 				}

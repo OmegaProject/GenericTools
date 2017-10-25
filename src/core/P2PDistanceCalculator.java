@@ -22,14 +22,14 @@ public class P2PDistanceCalculator implements Runnable {
 	int precision = 15;
 	
 	// public final static String fileName1 = "PT_Trajectories_";
-	public final static String fileName1 = "SDOutput";
+	public final static String fileName1 = "SD_Output";
 	public final static String fileName2 = "ParticleLog_";
 	
 	private final static String ident1 = "% Trajectory id:";
 	private final static String ident2 = "Particles of frame: ";
 	private final static String ident3 = "Particle";
 	
-	private final File workingDir;
+	private final File inputDir, outputDir;
 	private File trajFile;
 	private final List<File> logs;
 	private final Map<Integer, List<MyPoint>> computedPoints;
@@ -48,10 +48,11 @@ public class P2PDistanceCalculator implements Runnable {
 	
 	private final OmegaGenericToolGUI gui;
 	
-	public P2PDistanceCalculator(final File workingDir,
+	public P2PDistanceCalculator(final File inputDir, final File outputDir,
 			final boolean analyzeFiltered, final boolean analyzeMerged,
 			final OmegaGenericToolGUI gui) {
-		this.workingDir = workingDir;
+		this.inputDir = inputDir;
+		this.outputDir = outputDir;
 		this.trajFile = null;
 		this.logs = new ArrayList<File>();
 		this.computedPoints = new HashMap<Integer, List<MyPoint>>();
@@ -255,8 +256,13 @@ public class P2PDistanceCalculator implements Runnable {
 	
 	@Override
 	public void run() {
-		for (final File dataset : this.workingDir.listFiles()) {
+		for (final File dataset : this.inputDir.listFiles()) {
 			if (dataset.isFile()) {
+				continue;
+			}
+			final File outputDir1 = new File(this.outputDir.getAbsolutePath()
+					+ File.separator + dataset.getName());
+			if (!outputDir1.exists()) {
 				continue;
 			}
 			this.updateGUI("Dataset\t" + dataset.getName());
@@ -267,6 +273,11 @@ public class P2PDistanceCalculator implements Runnable {
 				if (image.isFile()) {
 					continue;
 				}
+				final File outputDir2 = new File(outputDir1.getAbsolutePath()
+						+ File.separator + image.getName());
+				if (!outputDir2.exists()) {
+					continue;
+				}
 				this.updateGUI("Image\t" + image.getName());
 				this.errorLog.append("Image\t" + image.getName() + "\n");
 				final File logsDir = new File(image.getPath()
@@ -274,9 +285,14 @@ public class P2PDistanceCalculator implements Runnable {
 				if (!logsDir.exists()) {
 					continue;
 				}
+				final File outputDir3 = new File(outputDir2.getAbsolutePath()
+						+ File.separator + logsDir.getName());
+				if (!outputDir3.exists()) {
+					continue;
+				}
 				this.perImageReset();
 				boolean abortFolder = false;
-				for (final File f : logsDir.listFiles()) {
+				for (final File f : outputDir3.listFiles()) {
 					boolean check = f.getName().contains(
 							P2PDistanceCalculator.fileName1);
 					if (this.analyzeFiltered) {
@@ -300,8 +316,10 @@ public class P2PDistanceCalculator implements Runnable {
 						} else {
 							this.trajFile = f;
 						}
-					} else if (f.getName().contains(
-							P2PDistanceCalculator.fileName2)) {
+					}
+				}
+				for (final File f : logsDir.listFiles()) {
+					if (f.getName().contains(P2PDistanceCalculator.fileName2)) {
 						this.logs.add(f);
 					}
 				}
@@ -310,7 +328,7 @@ public class P2PDistanceCalculator implements Runnable {
 				}
 				try {
 					boolean hasTrackTag = true;
-					if (P2PDistanceCalculator.fileName1.contains("SDOutput")) {
+					if (P2PDistanceCalculator.fileName1.contains("SD_Output")) {
 						hasTrackTag = false;
 					}
 					this.getPointsFromTrajectories(hasTrackTag);
@@ -323,12 +341,13 @@ public class P2PDistanceCalculator implements Runnable {
 			}
 			this.computeBiasAndSigma();
 			try {
-				this.writeResultsFile(dataset);
-				this.writeLogFile(dataset);
+				this.writeResultsFile(outputDir1);
+				this.writeLogFile(outputDir1);
 			} catch (final IOException ex) {
 				ex.printStackTrace();
 			}
 		}
+		this.updateGUI("***P2P COMPLETED***");
 	}
 	
 	private void computeBiasAndSigma() {

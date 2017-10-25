@@ -7,7 +7,9 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,17 +20,19 @@ import edu.umassmed.omega.commons.data.trajectoryElements.OmegaROI;
 import edu.umassmed.omega.sdSbalzariniPlugin.runnable.SDWorker2;
 
 public class SDBatchRunnerMultiFolder implements Runnable {
-	
-	private final File workingDir;
+
+	private final File inputDir, outputDir;
 	private final Double cutoff;
 	private final Float percentile, threshold;
 	private final boolean percAbs;
 	private final int radius, c, z;
-
-	public SDBatchRunnerMultiFolder(final File workingDir, final int radius,
-			final double cutoff, final float percentile, final float threshold,
-			final boolean percAbs, final int channel, final int plane) {
-		this.workingDir = workingDir;
+	
+	public SDBatchRunnerMultiFolder(final File inputDir, final File outputDir,
+			final int radius, final double cutoff, final float percentile,
+			final float threshold, final boolean percAbs, final int channel,
+			final int plane) {
+		this.inputDir = inputDir;
+		this.outputDir = outputDir;
 		this.radius = radius;
 		this.cutoff = cutoff;
 		this.percentile = percentile;
@@ -37,14 +41,16 @@ public class SDBatchRunnerMultiFolder implements Runnable {
 		this.c = channel;
 		this.z = plane;
 	}
-
+	
 	@Override
 	public void run() {
-		if (!this.workingDir.isDirectory())
+		if (!this.inputDir.isDirectory())
 			return;
-
-		final File log = new File(this.workingDir.getAbsoluteFile()
-				+ File.separator + "SDBatchLog.txt");
+		if (!this.outputDir.isDirectory())
+			return;
+		
+		final File log = new File(this.outputDir.getAbsoluteFile()
+				+ File.separator + "SDLog.txt");
 		FileWriter fwl = null;
 		try {
 			fwl = new FileWriter(log, false);
@@ -56,9 +62,14 @@ public class SDBatchRunnerMultiFolder implements Runnable {
 			return;
 		final BufferedWriter bwl = new BufferedWriter(fwl);
 		final ExecutorService exec = Executors.newFixedThreadPool(5);
-		for (final File f1 : this.workingDir.listFiles()) {
+		for (final File f1 : this.inputDir.listFiles()) {
 			if (!f1.isDirectory()) {
 				continue;
+			}
+			final File outputDir1 = new File(this.outputDir + File.separator
+					+ f1.getName());
+			if (!outputDir1.exists()) {
+				outputDir1.mkdir();
 			}
 
 			try {
@@ -77,12 +88,24 @@ public class SDBatchRunnerMultiFolder implements Runnable {
 					// TODO Auto-generated catch block
 					e4.printStackTrace();
 				}
+				final File outputDir2 = new File(outputDir1.getAbsolutePath()
+						+ File.separator + f2.getName());
+				if (!outputDir2.exists()) {
+					outputDir2.mkdir();
+				}
+				final File outputDir3 = new File(outputDir2.getAbsolutePath()
+						+ File.separator + "logs");
+				if (!outputDir3.exists()) {
+					outputDir3.mkdir();
+				}
 				final List<SDWorker2> workers = new ArrayList<SDWorker2>();
 				Float gMin = Float.MAX_VALUE, gMax = 0F;
 				final Map<Integer, ImagePlus> images = new LinkedHashMap<Integer, ImagePlus>();
-				final File test = new File(f2.getAbsoluteFile()
-						+ File.separator + "logs" + File.separator
-						+ "SDOutput.txt");
+				final File test = new File(outputDir3.getAbsolutePath()
+						+ File.separator + "SD_Output.txt");
+				// final File test = new File(f2.getAbsoluteFile()
+				// + File.separator + "logs" + File.separator
+				// + "SDOutput.txt");
 				if (test.exists()) {
 					try {
 						bwl.write(f2.getName() + " previously analyzed\n");
@@ -112,14 +135,14 @@ public class SDBatchRunnerMultiFolder implements Runnable {
 					}
 					images.put(index, is);
 				}
-
+				
 				try {
 					Thread.sleep(600);
 				} catch (final InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				
+
 				for (final Integer index : images.keySet()) {
 					final ImagePlus is = images.get(index);
 					final ImageStack lis = is.getImageStack();
@@ -132,7 +155,7 @@ public class SDBatchRunnerMultiFolder implements Runnable {
 					exec.execute(worker);
 					workers.add(worker);
 				}
-
+				
 				try {
 					bwl.write(f2.getName() + " all workers launched\n");
 				} catch (final IOException e3) {
@@ -145,7 +168,7 @@ public class SDBatchRunnerMultiFolder implements Runnable {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				
+
 				final List<SDWorker2> completedWorkers = new ArrayList<SDWorker2>();
 				while (!workers.isEmpty()) {
 					for (final SDWorker2 runnable : workers) {
@@ -156,18 +179,20 @@ public class SDBatchRunnerMultiFolder implements Runnable {
 					}
 					workers.removeAll(completedWorkers);
 				}
-
+				
 				try {
 					bwl.write(f2.getName() + " all workers completed\n");
 				} catch (final IOException e2) {
 					// TODO Auto-generated catch block
 					e2.printStackTrace();
 				}
-				
+
 				int counter = 0;
-				final File output = new File(f2.getAbsoluteFile()
-						+ File.separator + "logs" + File.separator
-						+ "SDOutput.txt");
+				final File output = new File(outputDir3.getAbsolutePath()
+						+ File.separator + "SD_Output.txt");
+				// final File output = new File(f2.getAbsoluteFile()
+				// + File.separator + "logs" + File.separator
+				// + "SD_Output.txt");
 				FileWriter fw = null;
 				try {
 					fw = new FileWriter(output, false);
@@ -218,7 +243,7 @@ public class SDBatchRunnerMultiFolder implements Runnable {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				
+
 				try {
 					bwl.write(f2.getName() + " finished\n");
 					bwl.flush();
@@ -255,5 +280,46 @@ public class SDBatchRunnerMultiFolder implements Runnable {
 			e.printStackTrace();
 		}
 	}
+	
+	private void createReadmeFile(final String mainDir) {
+		final File readme = new File(mainDir + File.separator + "SD_Readme.txt");
+		FileWriter fwl = null;
+		try {
+			fwl = new FileWriter(readme, false);
+		} catch (final IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		if (fwl == null)
+			return;
+		final BufferedWriter bwl = new BufferedWriter(fwl);
+		final String date = DateFormat.getInstance().format(
+				Calendar.getInstance().getTime());
+		try {
+			bwl.write(date);
+			bwl.write("\n");
+			bwl.write("Input:\t");
+			bwl.write(this.inputDir.getAbsolutePath());
+			bwl.write("\n");
+			bwl.write("Parameters:\n");
+			bwl.write("Radius: " + this.radius + "\n");
+			bwl.write("Cutoff: " + this.cutoff + "\n");
+			bwl.write("Percentile: " + this.percentile + "\n");
+			bwl.write("Threshold: " + this.threshold + "\n");
+			bwl.write("Perc abs: " + this.percAbs + "\n");
+			bwl.write("Channel: " + this.c + "\n");
+			bwl.write("Plane: " + this.z + "\n");
+		} catch (final IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 
+		try {
+			bwl.close();
+			fwl.close();
+		} catch (final IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 }

@@ -11,7 +11,9 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 public class SDBatchRunnerSingleFolder implements Runnable {
 	
-	private final File workingDir;
+	private final File inputDir, outputDir;
 	private final Double cutoff;
 	private final Float percentile, threshold;
 	private final boolean percAbs;
@@ -34,10 +36,11 @@ public class SDBatchRunnerSingleFolder implements Runnable {
 	// PERCENTILE 0.500
 
 	public SDBatchRunnerSingleFolder(final OmegaGenericToolGUI gui,
-			final File workingDir, final int radius, final double cutoff,
-			final float percentile, final float threshold,
+			final File inputDir, final File outputDir, final int radius,
+			final double cutoff, final float percentile, final float threshold,
 			final boolean percAbs, final int channel, final int plane) {
-		this.workingDir = workingDir;
+		this.inputDir = inputDir;
+		this.outputDir = outputDir;
 		this.radius = radius;
 		this.cutoff = cutoff;
 		this.percentile = percentile;
@@ -51,13 +54,15 @@ public class SDBatchRunnerSingleFolder implements Runnable {
 
 	@Override
 	public void run() {
-		if (!this.workingDir.isDirectory())
+		if (!this.inputDir.isDirectory())
+			return;
+		if (!this.outputDir.isDirectory())
 			return;
 		
-		this.gui.appendOutput("Launched on " + this.workingDir.getName());
+		this.gui.appendOutput("Launched on " + this.outputDir.getName());
 		
-		final File log = new File(this.workingDir.getAbsoluteFile()
-				+ File.separator + "SDBatchLog.txt");
+		final File log = new File(this.outputDir.getAbsoluteFile()
+				+ File.separator + "SD_Log.txt");
 		FileWriter fwl = null;
 		try {
 			fwl = new FileWriter(log, false);
@@ -69,16 +74,30 @@ public class SDBatchRunnerSingleFolder implements Runnable {
 			return;
 		final BufferedWriter bwl = new BufferedWriter(fwl);
 		final ExecutorService exec = Executors.newFixedThreadPool(5);
-		for (final File f1 : this.workingDir.listFiles()) {
+		for (final File f1 : this.inputDir.listFiles()) {
 			if (!f1.isDirectory()) {
 				continue;
+			}
+			
+			final File outputDir1 = new File(this.outputDir + File.separator
+					+ f1.getName());
+			if (!outputDir1.exists()) {
+				outputDir1.mkdir();
+			}
+
+			final File outputDir2 = new File(outputDir1.getAbsolutePath()
+					+ File.separator + "logs");
+			if (!outputDir2.exists()) {
+				outputDir2.mkdir();
 			}
 
 			final List<SDWorker2> workers = new ArrayList<SDWorker2>();
 			Float gMin = Float.MAX_VALUE, gMax = 0F;
 			final Map<Integer, ImagePlus> images = new LinkedHashMap<Integer, ImagePlus>();
-			final File test = new File(f1.getAbsoluteFile() + File.separator
-					+ "logs" + File.separator + "SDOutput.txt");
+			final File test = new File(outputDir2.getAbsolutePath()
+					+ File.separator + "SD_Output.txt");
+			// final File test = new File(f1.getAbsoluteFile() + File.separator
+			// + "logs" + File.separator + "SD_Output.txt");
 			if (test.exists()) {
 				this.gui.appendOutput(f1.getName() + " previously analyzed");
 				try {
@@ -165,8 +184,11 @@ public class SDBatchRunnerSingleFolder implements Runnable {
 			}
 			
 			int counter = 0;
-			final File output = new File(f1.getAbsoluteFile() + File.separator
-					+ "logs" + File.separator + "SDOutput.txt");
+			final File output = new File(outputDir2.getAbsolutePath()
+					+ File.separator + "SD_Output.txt");
+			// final File output = new File(f1.getAbsoluteFile() +
+			// File.separator
+			// + "logs" + File.separator + "SD_Output.txt");
 			FileWriter fw = null;
 			try {
 				fw = new FileWriter(output, false);
@@ -265,5 +287,47 @@ public class SDBatchRunnerSingleFolder implements Runnable {
 		}
 
 		this.gui.appendOutput("###############################################");
+	}
+
+	private void createReadmeFile(final String mainDir) {
+		final File readme = new File(mainDir + File.separator + "SD_Readme.txt");
+		FileWriter fwl = null;
+		try {
+			fwl = new FileWriter(readme, false);
+		} catch (final IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		if (fwl == null)
+			return;
+		final BufferedWriter bwl = new BufferedWriter(fwl);
+		final String date = DateFormat.getInstance().format(
+				Calendar.getInstance().getTime());
+		try {
+			bwl.write(date);
+			bwl.write("\n");
+			bwl.write("Input:\t");
+			bwl.write(this.inputDir.getAbsolutePath());
+			bwl.write("\n");
+			bwl.write("Parameters:\n");
+			bwl.write("Radius: " + this.radius + "\n");
+			bwl.write("Cutoff: " + this.cutoff + "\n");
+			bwl.write("Percentile: " + this.percentile + "\n");
+			bwl.write("Threshold: " + this.threshold + "\n");
+			bwl.write("Perc abs: " + this.percAbs + "\n");
+			bwl.write("Channel: " + this.c + "\n");
+			bwl.write("Plane: " + this.z + "\n");
+		} catch (final IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		try {
+			bwl.close();
+			fwl.close();
+		} catch (final IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 }
