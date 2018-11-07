@@ -11,6 +11,9 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -28,6 +31,7 @@ public class SDBatchRunnerSingleImage implements Runnable {
 	private final Float percentile, threshold;
 	private final boolean percAbs;
 	private final int radius, c, z;
+	private Float gMin, gMax;
 
 	private final OmegaGenericToolGUI gui;
 	
@@ -49,6 +53,9 @@ public class SDBatchRunnerSingleImage implements Runnable {
 		this.c = channel;
 		this.z = plane;
 
+		this.gMin = null;
+		this.gMax = null;
+		
 		this.gui = gui;
 	}
 
@@ -62,7 +69,7 @@ public class SDBatchRunnerSingleImage implements Runnable {
 		this.gui.appendOutput("Launched on " + this.outputDir.getName());
 		
 		final File log = new File(this.outputDir.getAbsoluteFile()
-				+ File.separator + "SDBatchLog.txt");
+				+ File.separator + "SD_Log.txt");
 		FileWriter fwl = null;
 		try {
 			fwl = new FileWriter(log, false);
@@ -89,7 +96,7 @@ public class SDBatchRunnerSingleImage implements Runnable {
 			outputDir2.mkdir();
 		}
 		final File test = new File(outputDir2.getAbsoluteFile()
-				+ File.separator + "SDOutputSingle.txt");
+				+ File.separator + "SD_OutputSingle.txt");
 		// final File test = new File(this.inputDir.getAbsoluteFile()
 		// + File.separator + "logs" + File.separator
 		// + "SDOutputSingle.txt");
@@ -132,6 +139,11 @@ public class SDBatchRunnerSingleImage implements Runnable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		this.gMin = gMin;
+		this.gMax = gMax;
+		
+		this.createReadmeFile(this.outputDir.getAbsolutePath());
 		
 		for (final Integer index : images.keySet()) {
 			final ImagePlus is = images.get(index);
@@ -182,7 +194,7 @@ public class SDBatchRunnerSingleImage implements Runnable {
 		
 		int counter = 0;
 		final File output = new File(outputDir2.getAbsolutePath()
-				+ File.separator + "SDOutput.txt");
+				+ File.separator + "SD_OutputSingle.txt");
 		// final File output = new File(this.inputDir.getAbsoluteFile()
 		// + File.separator + "logs" + File.separator
 		// + "SDOutputSingle.txt");
@@ -205,13 +217,19 @@ public class SDBatchRunnerSingleImage implements Runnable {
 				final List<OmegaROI> particles = worker.getResultingParticles();
 				final Map<OmegaROI, Map<String, Object>> values = worker
 						.getParticlesAdditionalValues();
-				final StringBuffer sb = new StringBuffer();
 				for (final OmegaROI roi : particles) {
+					final MathContext mc = new MathContext(7,
+							RoundingMode.HALF_UP);
+					BigDecimal bdX = new BigDecimal(roi.getX());
+					bdX = bdX.round(mc);
+					BigDecimal bdY = new BigDecimal(roi.getY());
+					bdY = bdY.round(mc);
+					final StringBuffer sb = new StringBuffer();
 					sb.append(roi.getFrameIndex());
 					sb.append("\t");
-					sb.append(roi.getX());
+					sb.append(bdX.toPlainString());
 					sb.append("\t");
-					sb.append(roi.getY());
+					sb.append(bdY.toPlainString());
 					sb.append("\t");
 					final Map<String, Object> roiValues = values.get(roi);
 					for (final String s : roiValues.keySet()) {
@@ -313,6 +331,8 @@ public class SDBatchRunnerSingleImage implements Runnable {
 			bwl.write("Perc abs: " + this.percAbs + "\n");
 			bwl.write("Channel: " + this.c + "\n");
 			bwl.write("Plane: " + this.z + "\n");
+			bwl.write("Global min: " + this.gMin + "\n");
+			bwl.write("Global max: " + this.gMax + "\n");
 		} catch (final IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();

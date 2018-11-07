@@ -1,6 +1,6 @@
 package core;
 
-import edu.umassmed.omega.commons.constants.OmegaConstantsAlgorithmParameters;
+import edu.umassmed.omega.commons.constants.OmegaAlgorithmParameterConstants;
 import edu.umassmed.omega.commons.data.analysisRunElements.OmegaParameter;
 import edu.umassmed.omega.commons.data.analysisRunElements.OmegaParticleDetectionRun;
 import edu.umassmed.omega.commons.data.coreElements.OmegaPlane;
@@ -17,6 +17,9 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -28,7 +31,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class SDSLBatchRunnerSingleFolder implements Runnable {
-
+	
 	private final File inputDir, outputDir;
 	private final Double cutoff;
 	private final Float percentile, threshold, displacement, objectFeature,
@@ -36,13 +39,14 @@ public class SDSLBatchRunnerSingleFolder implements Runnable {
 	private final boolean percAbs;
 	private final Integer radius, c, z, linkrange, minLength;
 	private final String movType, optimizer;
-	
-	private final OmegaGenericToolGUI gui;
+	private Float gMin, gMax;
 
+	private final OmegaGenericToolGUI gui;
+	
 	// RADIUS 3
 	// CUTOFF 0.001
 	// PERCENTILE 0.500
-	
+
 	public SDSLBatchRunnerSingleFolder(final OmegaGenericToolGUI gui,
 			final File inputDir, final File outputDir, final int radius,
 			final double cutoff, final float percentile, final float threshold,
@@ -60,7 +64,7 @@ public class SDSLBatchRunnerSingleFolder implements Runnable {
 		this.percAbs = percAbs;
 		this.c = channel;
 		this.z = plane;
-		
+
 		this.displacement = displacement;
 		this.linkrange = linkrange;
 		this.movType = movType;
@@ -68,21 +72,21 @@ public class SDSLBatchRunnerSingleFolder implements Runnable {
 		this.dynamics = dynamics;
 		this.optimizer = optimizer;
 		this.minLength = minLength;
-		
+
 		this.gui = gui;
 	}
-	
+
 	@Override
 	public void run() {
 		if (!this.inputDir.isDirectory())
 			return;
 		if (!this.outputDir.isDirectory())
 			return;
-
+		
 		this.gui.appendOutput("Launched on " + this.outputDir.getName());
-
+		
 		final File log = new File(this.outputDir.getAbsoluteFile()
-				+ File.separator + "SDBatchLog.txt");
+				+ File.separator + "SDSL_BatchLog.txt");
 		FileWriter fwl = null;
 		try {
 			fwl = new FileWriter(log, false);
@@ -112,7 +116,7 @@ public class SDSLBatchRunnerSingleFolder implements Runnable {
 			Float gMin = Float.MAX_VALUE, gMax = 0F;
 			final Map<Integer, ImagePlus> images = new LinkedHashMap<Integer, ImagePlus>();
 			final File test = new File(outputDir2.getAbsolutePath()
-					+ File.separator + "SDOutput.txt");
+					+ File.separator + "SD_Output.txt");
 			// final File test = new File(f1.getAbsoluteFile() + File.separator
 			// + "logs" + File.separator + "SDOutput.txt");
 			if (test.exists()) {
@@ -146,7 +150,7 @@ public class SDSLBatchRunnerSingleFolder implements Runnable {
 				}
 				images.put(index, is);
 			}
-
+			
 			try {
 				Thread.sleep(600);
 			} catch (final InterruptedException e) {
@@ -154,6 +158,11 @@ public class SDSLBatchRunnerSingleFolder implements Runnable {
 				e.printStackTrace();
 			}
 
+			this.gMin = gMin;
+			this.gMax = gMax;
+
+			this.createReadmeFile(this.outputDir.getAbsolutePath());
+			
 			for (final Integer index : images.keySet()) {
 				final ImagePlus is = images.get(index);
 				final ImageStack lis = is.getImageStack();
@@ -166,7 +175,7 @@ public class SDSLBatchRunnerSingleFolder implements Runnable {
 				exec.execute(worker);
 				workers.add(worker);
 			}
-
+			
 			this.gui.appendOutput(f1.getName() + " all workers launched");
 			try {
 				bwl.write(f1.getName() + " all workers launched\n");
@@ -180,7 +189,7 @@ public class SDSLBatchRunnerSingleFolder implements Runnable {
 			// // TODO Auto-generated catch block
 			// e.printStackTrace();
 			// }
-
+			
 			final List<SDWorker2> completedWorkers = new ArrayList<SDWorker2>();
 			while (!workers.isEmpty()) {
 				for (final SDWorker2 runnable : workers) {
@@ -191,7 +200,7 @@ public class SDSLBatchRunnerSingleFolder implements Runnable {
 				}
 				workers.removeAll(completedWorkers);
 			}
-
+			
 			this.gui.appendOutput(f1.getName() + " all workers completed");
 			try {
 				bwl.write(f1.getName() + " all workers completed\n");
@@ -199,10 +208,10 @@ public class SDSLBatchRunnerSingleFolder implements Runnable {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-
+			
 			int counter = 0;
 			final File output = new File(outputDir2.getAbsolutePath()
-					+ File.separator + "SDOutput.txt");
+					+ File.separator + "SD_Output.txt");
 			// final File output = new File(f1.getAbsoluteFile() +
 			// File.separator
 			// + "logs" + File.separator + "SDOutput.txt");
@@ -215,7 +224,7 @@ public class SDSLBatchRunnerSingleFolder implements Runnable {
 			}
 			if (fw == null)
 				return;
-
+			
 			final BufferedWriter bw = new BufferedWriter(fw);
 			final Map<OmegaPlane, List<OmegaROI>> resultingParticles = new LinkedHashMap<OmegaPlane, List<OmegaROI>>();
 			final Map<OmegaROI, Map<String, Object>> resultingParticlesValues = new LinkedHashMap<OmegaROI, Map<String, Object>>();
@@ -260,30 +269,30 @@ public class SDSLBatchRunnerSingleFolder implements Runnable {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-
+			
 			final OmegaParticleDetectionRun opdr = new OmegaParticleDetectionRun(
 					null, null, resultingParticles, resultingParticlesValues);
 			final List<OmegaParameter> params = new ArrayList<OmegaParameter>();
 			params.add(new OmegaParameter(
-					OmegaConstantsAlgorithmParameters.PARAM_DISPLACEMENT,
+					OmegaAlgorithmParameterConstants.PARAM_DISPLACEMENT,
 					this.displacement));
 			params.add(new OmegaParameter(
-					OmegaConstantsAlgorithmParameters.PARAM_LINKRANGE,
+					OmegaAlgorithmParameterConstants.PARAM_LINKRANGE,
 					this.linkrange));
 			params.add(new OmegaParameter(
-					OmegaConstantsAlgorithmParameters.PARAM_MOVTYPE,
+					OmegaAlgorithmParameterConstants.PARAM_MOVTYPE,
 					this.movType));
 			params.add(new OmegaParameter(
-					OmegaConstantsAlgorithmParameters.PARAM_OBJFEATURE,
+					OmegaAlgorithmParameterConstants.PARAM_OBJFEATURE,
 					this.objectFeature));
 			params.add(new OmegaParameter(
-					OmegaConstantsAlgorithmParameters.PARAM_DYNAMICS,
+					OmegaAlgorithmParameterConstants.PARAM_DYNAMICS,
 					this.dynamics));
 			params.add(new OmegaParameter(
-					OmegaConstantsAlgorithmParameters.PARAM_OPTIMIZER,
+					OmegaAlgorithmParameterConstants.PARAM_OPTIMIZER,
 					this.optimizer));
 			params.add(new OmegaParameter(
-					OmegaConstantsAlgorithmParameters.PARAM_MINPOINTS,
+					OmegaAlgorithmParameterConstants.PARAM_MINPOINTS,
 					this.minLength));
 			final Map<Integer, Map<OmegaParticleDetectionRun, List<OmegaParameter>>> particlesToProcess = new LinkedHashMap<Integer, Map<OmegaParticleDetectionRun, List<OmegaParameter>>>();
 			final Map<OmegaParticleDetectionRun, List<OmegaParameter>> particleToProcess = new LinkedHashMap<OmegaParticleDetectionRun, List<OmegaParameter>>();
@@ -291,16 +300,16 @@ public class SDSLBatchRunnerSingleFolder implements Runnable {
 			particlesToProcess.put(1, particleToProcess);
 			final PLRunner plr = new PLRunner(particlesToProcess);
 			plr.run();
-
+			
 			while (!plr.isJobCompleted()) {
-
+				
 			}
-
+			
 			final List<OmegaTrajectory> tracks = plr.getResultingTrajectories()
 					.get(1).get(opdr);
-
-			final File output2 = new File(f1.getAbsoluteFile() + File.separator
-					+ "logs" + File.separator + "PLOutput.txt");
+			
+			final File output2 = new File(outputDir2 + File.separator
+					+ "SL_Output.txt");
 			FileWriter fw2 = null;
 			try {
 				fw2 = new FileWriter(output2, false);
@@ -310,7 +319,7 @@ public class SDSLBatchRunnerSingleFolder implements Runnable {
 			}
 			if (fw2 == null)
 				return;
-
+			
 			final BufferedWriter bw2 = new BufferedWriter(fw2);
 			for (final OmegaTrajectory track : tracks) {
 				final StringBuffer sb = new StringBuffer();
@@ -318,12 +327,17 @@ public class SDSLBatchRunnerSingleFolder implements Runnable {
 				sb.append(track.getName());
 				sb.append("\n");
 				for (final OmegaROI roi : track.getROIs()) {
-
+					final MathContext mc = new MathContext(7,
+							RoundingMode.HALF_UP);
+					BigDecimal bdX = new BigDecimal(roi.getX());
+					bdX = bdX.round(mc);
+					BigDecimal bdY = new BigDecimal(roi.getY());
+					bdY = bdY.round(mc);
 					sb.append(roi.getFrameIndex());
 					sb.append("\t");
-					sb.append(roi.getX());
+					sb.append(bdX.toPlainString());
 					sb.append("\t");
-					sb.append(roi.getY());
+					sb.append(bdY.toPlainString());
 					sb.append("\t");
 					final Map<String, Object> roiValues = resultingParticlesValues
 							.get(roi);
@@ -347,7 +361,7 @@ public class SDSLBatchRunnerSingleFolder implements Runnable {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-
+			
 			this.gui.appendOutput(f1.getName() + " finished");
 			try {
 				bwl.write(f1.getName() + " finished\n");
@@ -386,7 +400,7 @@ public class SDSLBatchRunnerSingleFolder implements Runnable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
+		
 		try {
 			bwl.close();
 			fwl.close();
@@ -394,12 +408,13 @@ public class SDSLBatchRunnerSingleFolder implements Runnable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
+		
 		this.gui.appendOutput("###############################################");
 	}
-
+	
 	private void createReadmeFile(final String mainDir) {
-		final File readme = new File(mainDir + File.separator + "SD_Readme.txt");
+		final File readme = new File(mainDir + File.separator
+				+ "SDSL_Readme.txt");
 		FileWriter fwl = null;
 		try {
 			fwl = new FileWriter(readme, false);
@@ -424,13 +439,22 @@ public class SDSLBatchRunnerSingleFolder implements Runnable {
 			bwl.write("Percentile: " + this.percentile + "\n");
 			bwl.write("Threshold: " + this.threshold + "\n");
 			bwl.write("Perc abs: " + this.percAbs + "\n");
+			bwl.write("Linkrange: " + this.linkrange + "\n");
+			bwl.write("Displacement: " + this.displacement + "\n");
+			bwl.write("Mov type: " + this.movType + "\n");
+			bwl.write("Object feature: " + this.objectFeature + "\n");
+			bwl.write("Dynamics: " + this.dynamics + "\n");
+			bwl.write("Optimizer: " + this.optimizer + "\n");
+			bwl.write("Min length: " + this.minLength + "\n");
 			bwl.write("Channel: " + this.c + "\n");
 			bwl.write("Plane: " + this.z + "\n");
+			bwl.write("Global min: " + this.gMin + "\n");
+			bwl.write("Global max: " + this.gMax + "\n");
 		} catch (final IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		
+
 		try {
 			bwl.close();
 			fwl.close();

@@ -19,31 +19,31 @@ import javax.swing.SwingUtilities;
 
 public class TrajectoriesAnalyzerAndFilter implements Runnable {
 	// public final static String fileName1 = "PT_Trajectories_";
-	public final static String fileName1 = "PLOutput";
-	
+	public final static String fileName1 = "SL_Output";
+
 	private final static String ident1 = "% Trajectory id:";
 	private final static String ident2 = "trajectories found";
-	
+
 	private final File workingDir;
 	private File trajFile;
-	
+
 	private String fileNamePostfix;
 	private String fileHeader;
-	
+
 	private int trajCounter;
 	private int filteredTrajCounter;
-	
+
 	private final boolean onlyAnalysis, analyzeFiltered, analyzeMerged;
 	private final boolean mergeTrajectories;
 	private final double filterTrajLenght;
-	
+
 	private final Map<Integer, List<String>> trajectories;
 	private final Map<Integer, List<String>> filterTrajectories;
-	
+
 	private final StringBuffer log;
-	
+
 	private final OmegaGenericToolGUI gui;
-	
+
 	private final List<String> filesWithoutTrajectoriesAboveFilter;
 	private final Map<Integer, Integer> trajLenghtDistri;
 	private int totalFileAnalyzed;
@@ -60,7 +60,7 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 	private int maxTrajLenght;
 	private String minTrajLenghtAbsPath;
 	private int minTrajLenght;
-	
+
 	public TrajectoriesAnalyzerAndFilter(final File workingDir,
 			final double filter, final boolean onlyAnalysis,
 			final boolean mergeTrajectories, final boolean analyzeFiltered,
@@ -79,7 +79,7 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 		this.filterTrajLenght = filter;
 		this.log = new StringBuffer();
 		this.gui = gui;
-		
+
 		this.filesWithoutTrajectoriesAboveFilter = new ArrayList<String>();
 		this.trajLenghtDistri = new HashMap<Integer, Integer>();
 		this.totalFileAnalyzed = 0;
@@ -97,15 +97,15 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 		this.minTrajLenghtAbsPath = null;
 		this.minTrajLenght = Integer.MAX_VALUE;
 	}
-	
+
 	public void updateGUI(final String update) {
 		try {
 			SwingUtilities.invokeAndWait(new Runnable() {
-				
+
 				@Override
 				public void run() {
 					TrajectoriesAnalyzerAndFilter.this.gui.appendOutput(update);
-					
+
 				}
 			});
 		} catch (final InvocationTargetException ex) {
@@ -114,7 +114,7 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 			ex.printStackTrace();
 		}
 	}
-	
+
 	@Override
 	public void run() {
 		for (final File dataset : this.workingDir.listFiles()) {
@@ -123,7 +123,7 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 			}
 			this.updateGUI("Dataset\t" + dataset.getName());
 			this.log.append("Dataset\t" + dataset.getName() + "\n");
-			
+
 			this.perDatasetReset();
 			for (final File image : dataset.listFiles()) {
 				if (image.isFile()) {
@@ -136,7 +136,7 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 				if (!logsDir.exists()) {
 					continue;
 				}
-				
+
 				this.perImageReset();
 				boolean abortFolder = false;
 				for (final File f : logsDir.listFiles()) {
@@ -181,7 +181,7 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 					ex.printStackTrace();
 					this.updateGUI("Error reading trajectories at image");
 				}
-				
+
 				this.analyseTrajectories();
 				if (!this.onlyAnalysis) {
 					if (this.mergeTrajectories) {
@@ -206,7 +206,7 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 			}
 		}
 	}
-	
+
 	public void perImageReset() {
 		this.trajectories.clear();
 		this.filterTrajectories.clear();
@@ -215,7 +215,7 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 		this.trajCounter = 0;
 		this.filteredTrajCounter = 0;
 	}
-	
+
 	public void perDatasetReset() {
 		this.filesWithoutTrajectoriesAboveFilter.clear();
 		this.trajLenghtDistri.clear();
@@ -234,7 +234,7 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 		this.minTrajLenghtAbsPath = null;
 		this.minTrajLenght = Integer.MAX_VALUE;
 	}
-	
+
 	private void getTrajectoriesFromFile() throws IOException {
 		final FileReader fr = new FileReader(this.trajFile);
 		final BufferedReader br = new BufferedReader(fr);
@@ -249,7 +249,7 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 				String trackName = line.replace(
 						TrajectoriesAnalyzerAndFilter.ident1, "");
 				trackName = trackName.replaceAll("\t", "");
-				trackName = trackName.replaceAll("Track__", "");
+				trackName = trackName.replaceAll("Track_", "");
 				trajIndex = Integer.valueOf(trackName);
 				traj = new ArrayList<String>();
 				this.trajCounter++;
@@ -263,28 +263,28 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 			} else if (readParticles) {
 				traj.add(line);
 			}
-			
+
 			line = br.readLine();
 		}
 		br.close();
 		fr.close();
-		
+
 		this.fileHeader = fileHeaderBuffer.toString();
 	}
-	
+
 	private void analyseTrajectories() {
 		boolean hasTrajAboveLimit = false;
 		for (final Integer index : this.trajectories.keySet()) {
 			final List<String> trajPoints = this.trajectories.get(index);
 			final int trajLenght = trajPoints.size();
-			
+
 			int trajCount = 1;
 			if (this.trajLenghtDistri.keySet().contains(trajLenght)) {
 				trajCount = this.trajLenghtDistri.get(trajLenght);
 				trajCount++;
 			}
 			this.trajLenghtDistri.put(trajLenght, trajCount);
-			
+
 			if (trajLenght > this.maxTrajLenght) {
 				this.maxTrajLenght = trajLenght;
 				this.maxTrajLenghtAbsPath = this.trajFile.getAbsolutePath();
@@ -319,9 +319,29 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 		this.meanTrajPerFile += numberOfTraj;
 		this.totalFileAnalyzed++;
 	}
-	
+
 	private void mergeTrajectories() {
+		Integer longestTraj = null;
+		final Integer longestTrajSize = 0;
+		for (final Integer index : this.trajectories.keySet()) {
+			if (longestTrajSize < this.trajectories.get(index).size()) {
+				longestTraj = index;
+			}
+		}
 		final Map<Integer, String> points = new HashMap<Integer, String>();
+		if (longestTraj != null) {
+			final List<String> trajPoints = this.trajectories.get(longestTraj);
+			for (final String s : trajPoints) {
+				// final String s2 = s.substring(s.indexOf("\t") + 1);
+				final String frame = s.substring(0, s.indexOf("\t"));
+				final int frameIndex = Integer.valueOf(frame);
+				if (!points.containsKey(frameIndex)) {
+					points.put(frameIndex, s);
+				} else {
+					// points.remove(frameIndex);
+				}
+			}
+		}
 		for (final Integer index : this.trajectories.keySet()) {
 			final List<String> trajPoints = this.trajectories.get(index);
 			for (final String s : trajPoints) {
@@ -331,11 +351,11 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 				if (!points.containsKey(frameIndex)) {
 					points.put(frameIndex, s);
 				} else {
-					points.remove(frameIndex);
+					// points.remove(frameIndex);
 				}
 			}
 		}
-		
+
 		final List<String> trajPointsNew = new ArrayList<String>();
 		final List<Integer> frameIndexes = new ArrayList<Integer>(
 				points.keySet());
@@ -346,7 +366,7 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 		this.filterTrajectories.put(0, trajPointsNew);
 		this.filteredTrajCounter = 1;
 	}
-	
+
 	private void filterTrajectories() {
 		int trajIndex = 0;
 		for (final Integer index : this.trajectories.keySet()) {
@@ -358,7 +378,7 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 			trajIndex++;
 		}
 	}
-	
+
 	private void writeLogFile(final File dir) throws IOException {
 		final File resultsFile = new File(dir.getAbsolutePath()
 				+ File.separatorChar + "TAF_Log.txt");
@@ -368,11 +388,11 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 		bw.close();
 		fw.close();
 	}
-	
+
 	private void writeFilteredTrajectoriesToFile(final File dir)
 			throws IOException {
 		final File resultsFile;
-		
+
 		if (!this.mergeTrajectories) {
 			resultsFile = new File(dir.getAbsolutePath() + File.separatorChar
 					+ TrajectoriesAnalyzerAndFilter.fileName1
@@ -384,7 +404,7 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 		}
 		final FileWriter fw = new FileWriter(resultsFile);
 		final BufferedWriter bw = new BufferedWriter(fw);
-		
+
 		bw.write(this.fileHeader);
 		for (int i = 0; i < this.filteredTrajCounter; i++) {
 			final List<String> trajPoints = this.filterTrajectories.get(i);
@@ -399,18 +419,18 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 		}
 		bw.write("% " + this.filteredTrajCounter + " "
 				+ TrajectoriesAnalyzerAndFilter.ident2);
-		
+
 		bw.close();
 		fw.close();
 	}
-	
+
 	private void writeTrajectoriesAnalysisToFile(final File dir)
 			throws IOException {
 		final File resultsFile = new File(dir.getAbsolutePath()
 				+ File.separatorChar + "TAF_TrajAnalysis.txt");
 		final FileWriter fw = new FileWriter(resultsFile);
 		final BufferedWriter bw = new BufferedWriter(fw);
-		
+
 		bw.write("# of file analyzed:\t" + this.totalFileAnalyzed + "\n");
 		bw.write("Mean traj per file:\t" + this.meanTrajPerFile + "\n");
 		bw.write("Max traj per file:\t" + this.maxTrajPerFile + "\n");
@@ -445,7 +465,7 @@ public class TrajectoriesAnalyzerAndFilter implements Runnable {
 		for (final String s : this.filesWithoutTrajectoriesAboveFilter) {
 			bw.write(s + "\n");
 		}
-		
+
 		bw.close();
 		fw.close();
 	}

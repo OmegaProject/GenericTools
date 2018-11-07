@@ -17,6 +17,9 @@ import core.DAndSMSSDataAggregator;
 import core.DAndSMSSFilesConsolidator;
 import core.DAndSMSSMeansCalculator;
 import core.DValueCalculator;
+import core.FilterMosaicReport;
+import core.FilterPTTrackerReport;
+import core.FilterSDReport;
 import core.ImageComparator;
 import core.P2PDistanceCalculator;
 import core.PTFilesAnalyzer;
@@ -295,6 +298,12 @@ public class OmegaGenericToolGUIListeners {
 						final P2PDistanceCalculator calc = new P2PDistanceCalculator(
 								inputDir, outputDir, analyzeFilteredTraj,
 								analyzeMergedTraj, mainGUI);
+						// final
+						// P2PDistanceCalculator_MosaicCOutput_Displacement calc
+						// = new
+						// P2PDistanceCalculator_MosaicCOutput_Displacement(
+						// inputDir, outputDir, analyzeFilteredTraj,
+						// analyzeMergedTraj, mainGUI);
 						
 						final Thread t = new Thread(calc);
 						t.start();
@@ -412,19 +421,11 @@ public class OmegaGenericToolGUIListeners {
 						.isPDRunningSingleImage();
 				
 				final Integer radius = 3;
-				final Double cutoff = 0.001;
-				final Float percentile = (float) 0.500 / 100;
-				final Float threshold = (float) 0.500;
+				final Double cutoff = 0.000;
+				final Float percentile = (float) 0.900 / 100;
+				final Float threshold = (float) 0.900;
 				final Boolean percAbs = false;
 				final Integer z = 0, c = 0;
-				// final Float displacement = 3f;
-				// final Integer linkrange = 5;
-				// final String movType = PLConstants.PARAM_MOVTYPE_BROWNIAN;
-				// final Float objectFeature = 1f;
-				// final Float dynamics = 1f;
-				// final String optimizer = PLConstants.PARAM_OPTIMIZER_GREEDY;
-				// final Integer minLength = 0;
-				
 				if (isRunningSingleImage) {
 					final SDBatchRunnerSingleImage runner = new SDBatchRunnerSingleImage(
 							mainGUI, inputDir, outputDir, radius, cutoff,
@@ -432,18 +433,79 @@ public class OmegaGenericToolGUIListeners {
 					final Thread t = new Thread(runner);
 					t.start();
 				} else {
+					// final SDBatchRunnerSingleFolder runner = new
+					// SDBatchRunnerSingleFolder(
+					// mainGUI, inputDir, outputDir, radius, cutoff,
+					// percentile, threshold, percAbs, c, z);
 					final SDBatchRunnerSingleFolder runner = new SDBatchRunnerSingleFolder(
 							mainGUI, inputDir, outputDir, radius, cutoff,
 							percentile, threshold, percAbs, c, z);
-					// final SDSLBatchRunnerSingleFolder runner = new
-					// SDSLBatchRunnerSingleFolder(
-					// mainGUI, inputDir, outputDir, radius, cutoff, percentile,
-					// threshold, percAbs, c, z, displacement, linkrange,
-					// movType, objectFeature, dynamics, optimizer,
-					// minLength);
+					// , displacement,
+					// linkrange, movType, objectFeature, dynamics,
+					// optimizer, minLength
 					final Thread t = new Thread(runner);
 					t.start();
 				}
+			}
+		});
+	}
+	
+	public static void addFilterMosaicReport(final OmegaGenericToolGUI mainGUI) {
+		mainGUI.getFilterMosaicReport().addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(final ActionEvent evt) {
+				final File workingDir = mainGUI.getWorkingDirectory();
+				final File outputDir = mainGUI.getOutputDirectory();
+				
+				final FilterMosaicReport fmr = new FilterMosaicReport(
+						workingDir, outputDir, mainGUI);
+				// final FilterPTTrackerReport fmr = new FilterPTTrackerReport(
+				// workingDir, outputDir, mainGUI);
+				// final FilterSDReport fmr = new FilterSDReport(workingDir,
+				// outputDir, mainGUI);
+
+				final Thread t = new Thread(fmr);
+				t.start();
+			}
+		});
+	}
+
+	public static void addFilterPTReport(final OmegaGenericToolGUI mainGUI) {
+		mainGUI.getFilterPTReport().addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(final ActionEvent evt) {
+				final File workingDir = mainGUI.getWorkingDirectory();
+				final File outputDir = mainGUI.getOutputDirectory();
+
+				// final FilterMosaicReport fmr = new FilterMosaicReport(
+				// workingDir, outputDir, mainGUI);
+				final FilterPTTrackerReport fmr = new FilterPTTrackerReport(
+						workingDir, outputDir, mainGUI);
+				// final FilterSDReport fmr = new FilterSDReport(workingDir,
+				// outputDir, mainGUI);
+
+				final Thread t = new Thread(fmr);
+				t.start();
+			}
+		});
+	}
+	
+	public static void addFilterSDReport(final OmegaGenericToolGUI mainGUI) {
+		mainGUI.getFilterSDReport().addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(final ActionEvent evt) {
+				final File workingDir = mainGUI.getWorkingDirectory();
+				final File outputDir = mainGUI.getOutputDirectory();
+
+				// final FilterMosaicReport fmr = new FilterMosaicReport(
+				// workingDir, outputDir, mainGUI);
+				// final FilterPTTrackerReport fmr = new FilterPTTrackerReport(
+				// workingDir, outputDir, mainGUI);
+				final FilterSDReport fmr = new FilterSDReport(workingDir,
+						outputDir, mainGUI);
+
+				final Thread t = new Thread(fmr);
+				t.start();
 			}
 		});
 	}
