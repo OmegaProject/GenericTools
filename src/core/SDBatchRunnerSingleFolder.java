@@ -1,7 +1,7 @@
 package core;
 
 import edu.umassmed.omega.commons.data.trajectoryElements.OmegaROI;
-import edu.umassmed.omega.sdSbalzariniPlugin.runnable.SDWorker2;
+import edu.umassmed.omega.mosaicFeaturePointDetectionPlugin.runnable.MosaicFeaturePointDetectionWorker;
 import gui.OmegaGenericToolGUI;
 import ij.ImagePlus;
 import ij.ImageStack;
@@ -95,7 +95,7 @@ public class SDBatchRunnerSingleFolder implements Runnable {
 				outputDir2.mkdir();
 			}
 
-			final List<SDWorker2> workers = new ArrayList<SDWorker2>();
+			final List<MosaicFeaturePointDetectionWorker> workers = new ArrayList<MosaicFeaturePointDetectionWorker>();
 			Float gMin = Float.MAX_VALUE, gMax = 0F;
 			final Map<Integer, ImagePlus> images = new LinkedHashMap<Integer, ImagePlus>();
 			final File test = new File(outputDir2.getAbsolutePath()
@@ -149,9 +149,10 @@ public class SDBatchRunnerSingleFolder implements Runnable {
 			for (final Integer index : images.keySet()) {
 				final ImagePlus is = images.get(index);
 				final ImageStack lis = is.getImageStack();
-				final SDWorker2 worker = new SDWorker2(lis, index - 1,
-						this.radius, this.cutoff, this.percentile,
-						this.threshold, this.percAbs, this.c, this.z);
+				final MosaicFeaturePointDetectionWorker worker = new MosaicFeaturePointDetectionWorker(
+						lis, index - 1, this.radius, this.cutoff,
+						this.percentile, this.threshold, this.percAbs, this.c,
+						this.z);
 				worker.setGlobalMax(gMax);
 				worker.setGlobalMin(gMin);
 				// exec.submit(worker);
@@ -173,9 +174,9 @@ public class SDBatchRunnerSingleFolder implements Runnable {
 			// e.printStackTrace();
 			// }
 			
-			final List<SDWorker2> completedWorkers = new ArrayList<SDWorker2>();
+			final List<MosaicFeaturePointDetectionWorker> completedWorkers = new ArrayList<MosaicFeaturePointDetectionWorker>();
 			while (!workers.isEmpty()) {
-				for (final SDWorker2 runnable : workers) {
+				for (final MosaicFeaturePointDetectionWorker runnable : workers) {
 					if (!runnable.isJobCompleted()) {
 						continue;
 					}
@@ -209,7 +210,7 @@ public class SDBatchRunnerSingleFolder implements Runnable {
 				return;
 			final BufferedWriter bw = new BufferedWriter(fw);
 			while (counter < completedWorkers.size()) {
-				for (final SDWorker2 worker : completedWorkers) {
+				for (final MosaicFeaturePointDetectionWorker worker : completedWorkers) {
 					if (worker.getIndex() != counter) {
 						continue;
 					}

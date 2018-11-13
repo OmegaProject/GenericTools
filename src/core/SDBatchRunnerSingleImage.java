@@ -1,7 +1,7 @@
 package core;
 
 import edu.umassmed.omega.commons.data.trajectoryElements.OmegaROI;
-import edu.umassmed.omega.sdSbalzariniPlugin.runnable.SDWorker2;
+import edu.umassmed.omega.mosaicFeaturePointDetectionPlugin.runnable.MosaicFeaturePointDetectionWorker;
 import gui.OmegaGenericToolGUI;
 import ij.ImagePlus;
 import ij.ImageStack;
@@ -25,20 +25,20 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class SDBatchRunnerSingleImage implements Runnable {
-	
+
 	private final File inputDir, outputDir;
 	private final Double cutoff;
 	private final Float percentile, threshold;
 	private final boolean percAbs;
 	private final int radius, c, z;
 	private Float gMin, gMax;
-
-	private final OmegaGenericToolGUI gui;
 	
+	private final OmegaGenericToolGUI gui;
+
 	// RADIUS 3
 	// CUTOFF 0.001
 	// PERCENTILE 0.500
-
+	
 	public SDBatchRunnerSingleImage(final OmegaGenericToolGUI gui,
 			final File inputDir, final File outputDir, final int radius,
 			final double cutoff, final float percentile, final float threshold,
@@ -52,22 +52,22 @@ public class SDBatchRunnerSingleImage implements Runnable {
 		this.percAbs = percAbs;
 		this.c = channel;
 		this.z = plane;
-
+		
 		this.gMin = null;
 		this.gMax = null;
-		
+
 		this.gui = gui;
 	}
-
+	
 	@Override
 	public void run() {
 		if (!this.inputDir.isDirectory())
 			return;
 		if (!this.outputDir.isDirectory())
 			return;
-		
+
 		this.gui.appendOutput("Launched on " + this.outputDir.getName());
-		
+
 		final File log = new File(this.outputDir.getAbsoluteFile()
 				+ File.separator + "SD_Log.txt");
 		FileWriter fwl = null;
@@ -81,8 +81,8 @@ public class SDBatchRunnerSingleImage implements Runnable {
 			return;
 		final BufferedWriter bwl = new BufferedWriter(fwl);
 		final ExecutorService exec = Executors.newFixedThreadPool(5);
-
-		final List<SDWorker2> workers = new ArrayList<SDWorker2>();
+		
+		final List<MosaicFeaturePointDetectionWorker> workers = new ArrayList<MosaicFeaturePointDetectionWorker>();
 		Float gMin = Float.MAX_VALUE, gMax = 0F;
 		final Map<Integer, ImagePlus> images = new LinkedHashMap<Integer, ImagePlus>();
 		final File outputDir1 = new File(this.outputDir + File.separator
@@ -132,32 +132,32 @@ public class SDBatchRunnerSingleImage implements Runnable {
 			}
 			images.put(index, is);
 		}
-
+		
 		try {
 			Thread.sleep(600);
 		} catch (final InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 		this.gMin = gMin;
 		this.gMax = gMax;
-		
+
 		this.createReadmeFile(this.outputDir.getAbsolutePath());
-		
+
 		for (final Integer index : images.keySet()) {
 			final ImagePlus is = images.get(index);
 			final ImageStack lis = is.getImageStack();
-			final SDWorker2 worker = new SDWorker2(lis, index - 1, this.radius,
-					this.cutoff, this.percentile, this.threshold, this.percAbs,
-					this.c, this.z);
+			final MosaicFeaturePointDetectionWorker worker = new MosaicFeaturePointDetectionWorker(
+					lis, index - 1, this.radius, this.cutoff, this.percentile,
+					this.threshold, this.percAbs, this.c, this.z);
 			worker.setGlobalMax(gMax);
 			worker.setGlobalMin(gMin);
 			// exec.submit(worker);
 			exec.execute(worker);
 			workers.add(worker);
 		}
-
+		
 		this.gui.appendOutput(this.inputDir.getName() + " all workers launched");
 		try {
 			bwl.write(this.inputDir.getName() + " all workers launched\n");
@@ -171,10 +171,10 @@ public class SDBatchRunnerSingleImage implements Runnable {
 		// // TODO Auto-generated catch block
 		// e.printStackTrace();
 		// }
-		
-		final List<SDWorker2> completedWorkers = new ArrayList<SDWorker2>();
+
+		final List<MosaicFeaturePointDetectionWorker> completedWorkers = new ArrayList<MosaicFeaturePointDetectionWorker>();
 		while (!workers.isEmpty()) {
-			for (final SDWorker2 runnable : workers) {
+			for (final MosaicFeaturePointDetectionWorker runnable : workers) {
 				if (!runnable.isJobCompleted()) {
 					continue;
 				}
@@ -182,7 +182,7 @@ public class SDBatchRunnerSingleImage implements Runnable {
 			}
 			workers.removeAll(completedWorkers);
 		}
-
+		
 		this.gui.appendOutput(this.inputDir.getName()
 				+ " all workers completed");
 		try {
@@ -191,7 +191,7 @@ public class SDBatchRunnerSingleImage implements Runnable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 		int counter = 0;
 		final File output = new File(outputDir2.getAbsolutePath()
 				+ File.separator + "SD_OutputSingle.txt");
@@ -209,7 +209,7 @@ public class SDBatchRunnerSingleImage implements Runnable {
 			return;
 		final BufferedWriter bw = new BufferedWriter(fw);
 		while (counter < completedWorkers.size()) {
-			for (final SDWorker2 worker : completedWorkers) {
+			for (final MosaicFeaturePointDetectionWorker worker : completedWorkers) {
 				if (worker.getIndex() != counter) {
 					continue;
 				}
@@ -252,7 +252,7 @@ public class SDBatchRunnerSingleImage implements Runnable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 		this.gui.appendOutput(this.inputDir.getName() + " finished");
 		try {
 			bwl.write(this.inputDir.getName() + " finished\n");
@@ -266,7 +266,7 @@ public class SDBatchRunnerSingleImage implements Runnable {
 		// // TODO Auto-generated catch block
 		// e.printStackTrace();
 		// }
-
+		
 		exec.shutdown();
 		this.gui.appendOutput("Try to shut down exec");
 		try {
@@ -291,7 +291,7 @@ public class SDBatchRunnerSingleImage implements Runnable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
+		
 		try {
 			bwl.close();
 			fwl.close();
@@ -299,10 +299,10 @@ public class SDBatchRunnerSingleImage implements Runnable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
+		
 		this.gui.appendOutput("###############################################");
 	}
-
+	
 	private void createReadmeFile(final String mainDir) {
 		final File readme = new File(mainDir + File.separator + "SD_Readme.txt");
 		FileWriter fwl = null;
@@ -337,7 +337,7 @@ public class SDBatchRunnerSingleImage implements Runnable {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		
+
 		try {
 			bwl.close();
 			fwl.close();
